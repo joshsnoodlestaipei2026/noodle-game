@@ -1,0 +1,529 @@
+<title>拌麵出餐挑戰</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<style>
+/* Layout: one phone screen. Order slip on top, plating stage in the middle, ingredient tray at thumb reach. Single paper-and-ink look taken from the 久時 menu. */
+:root{
+  --paper:#f1f2ee; --paper-2:#e6e9e4; --card:#fbfbf8;
+  --ink:#23314a; --ink-soft:#5d6b82;
+  --brand:#405880; --brand-deep:#2f4466; --brand-soft:#d3dbe8; --line:#bcc6d5;
+  --bad:#b4523c; --good:#4d7a52; --gold:#c39638;
+  --f-display:"Noto Serif TC","Songti TC","PMingLiU",serif;
+  --f-ui:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;overflow:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
+  background:radial-gradient(circle at 20% 10%,rgba(64,88,128,.06),transparent 40%),radial-gradient(circle at 90% 80%,rgba(64,88,128,.07),transparent 45%)}
+.app{position:relative;height:100%;max-width:460px;margin:0 auto;display:flex;flex-direction:column;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;box-sizing:border-box;gap:8px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.screen{display:flex;flex-direction:column;flex:1;min-height:0;gap:8px}
+
+/* ---------- start ---------- */
+.brandline{font-family:var(--f-display);color:var(--brand);letter-spacing:.5em;font-size:13px;text-align:center;margin-top:6px}
+.brandline b{font-weight:500;color:var(--line);letter-spacing:0;margin:0 .4em}
+.hero{display:flex;justify-content:center}
+.hero svg{width:min(58vw,240px,34vh);height:auto}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(30px,9vw,40px);text-align:center;margin:0;letter-spacing:.12em;color:var(--brand-deep);text-wrap:balance}
+.sub{text-align:center;color:var(--ink-soft);margin:0;font-size:14px;line-height:1.6}
+.how{list-style:none;padding:0;margin:4px auto 0;display:grid;gap:6px;font-size:13.5px;max-width:330px;width:100%}
+.how li{display:grid;grid-template-columns:26px 1fr;align-items:center;gap:8px;color:var(--ink)}
+.how span{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--brand);color:var(--brand);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:13px}
+.toggles{display:flex;justify-content:center;gap:10px;margin-top:4px}
+.seg{display:flex;border:1.5px solid var(--brand);border-radius:999px;overflow:hidden}
+.seg button{padding:6px 14px;font-size:13px;color:var(--brand)}
+.seg button[aria-pressed="true"]{background:var(--brand);color:#fff}
+.primary{margin:8px auto 0;background:var(--brand);color:#fff;font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:.3em;padding:14px 0;width:min(100%,320px);border-radius:12px;box-shadow:0 4px 0 var(--brand-deep)}
+.primary:active{transform:translateY(3px);box-shadow:0 1px 0 var(--brand-deep)}
+.best{text-align:center;font-size:12.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
+.spacer{flex:1}
+
+/* ---------- HUD ---------- */
+.hud{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8px;font-variant-numeric:tabular-nums}
+.hud .lbl{font-size:10.5px;letter-spacing:.15em;color:var(--ink-soft)}
+.hud .val{font-family:var(--f-display);font-weight:700;font-size:20px;color:var(--brand-deep);line-height:1.1}
+.hud .r{text-align:right}
+.clock{text-align:center}
+.clock .val{font-size:26px}
+.clock.low .val{color:var(--bad)}
+.timebar{height:4px;background:var(--paper-2);border-radius:4px;overflow:hidden}
+.timebar i{display:block;height:100%;background:var(--brand);transform-origin:left;width:100%}
+.combo{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.05em;min-height:14px}
+
+/* ---------- ticket ---------- */
+.ticket{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:8px 12px 10px;position:relative;box-shadow:0 2px 0 rgba(35,49,74,.06)}
+.ticket::before,.ticket::after{content:"";position:absolute;left:10px;right:10px;height:6px;background:radial-gradient(circle at 4px 0,transparent 3px,var(--card) 3.5px) repeat-x;background-size:8px 6px}
+.ticket::before{top:-6px;transform:scaleY(-1)}
+.ticket::after{bottom:-6px}
+.t-top{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);letter-spacing:.08em;font-variant-numeric:tabular-nums}
+.t-name{font-family:var(--f-display);font-weight:700;font-size:clamp(17px,5vw,20px);margin:2px 0 6px;color:var(--ink);line-height:1.3}
+.t-name small{font-family:var(--f-ui);font-weight:500;font-size:11px;color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:0 4px;margin-left:6px;vertical-align:3px;letter-spacing:.05em}
+.chips{display:flex;flex-wrap:wrap;gap:4px;min-height:22px}
+.chip{font-size:11.5px;padding:2px 7px;border-radius:999px;border:1px dashed var(--line);color:var(--ink-soft);line-height:1.4}
+.chip.done{border-style:solid;border-color:var(--good);color:var(--good);background:rgba(77,122,82,.08)}
+.chip.done::before{content:"✓ "}
+.chip.base{border-color:var(--brand);color:var(--brand)}
+.chip.base.done{border-color:var(--good);color:var(--good)}
+.t-row{display:flex;align-items:center;gap:8px;margin-top:8px}
+.t-bar{flex:1;height:5px;border-radius:5px;background:var(--paper-2);overflow:hidden}
+.t-bar i{display:block;height:100%;background:var(--good);width:100%}
+.t-bar.warn i{background:var(--bad)}
+.hintbtn{font-size:11.5px;color:var(--brand);border:1px solid var(--brand);border-radius:999px;padding:2px 9px;white-space:nowrap}
+.hintbtn[disabled]{opacity:.35;cursor:default}
+
+/* ---------- stage ---------- */
+.stage{flex:1;min-height:0;display:grid;place-items:center;position:relative}
+.stage svg{width:auto;height:100%;max-height:250px;max-width:100%}
+.cooking{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.cooking div{background:rgba(35,49,74,.82);color:#fff;border-radius:999px;padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:8px}
+.cooking .ring{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:absolute;left:50%;top:6px;transform:translateX(-50%);background:var(--bad);color:#fff;font-size:13px;padding:5px 12px;border-radius:6px;white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;z-index:3}
+.toast.show{opacity:1}
+.toast.ok{background:var(--good)}
+.float{position:absolute;left:50%;top:40%;transform:translate(-50%,0);font-family:var(--f-display);font-weight:900;font-size:30px;color:var(--brand-deep);pointer-events:none;animation:rise .9s ease-out forwards;z-index:3;text-shadow:0 2px 0 var(--paper)}
+@keyframes rise{to{transform:translate(-50%,-60px);opacity:0}}
+
+/* ---------- tray ---------- */
+.trayhead{display:flex;justify-content:space-between;align-items:baseline}
+.step{font-family:var(--f-display);font-weight:700;color:var(--brand);font-size:14px;letter-spacing:.15em}
+.step b{color:var(--line);font-weight:500;letter-spacing:0;margin:0 .3em}
+.stepnote{font-size:11.5px;color:var(--ink-soft)}
+.tray{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px 3px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:0;transition:transform .08s}
+.tile svg{width:clamp(34px,10vw,44px);height:auto}
+.tile span{font-size:clamp(10px,2.9vw,11.5px);line-height:1.25;text-align:center;color:var(--ink);word-break:break-all}
+.tile:active{transform:scale(.95)}
+.tile.used{opacity:.35}
+.tile[disabled]{opacity:.35;cursor:default}
+.tile.shake{animation:shake .32s;border-color:var(--bad)}
+@keyframes shake{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
+.serve{margin-top:4px;width:100%;padding:12px 0;border-radius:12px;font-family:var(--f-display);font-weight:900;font-size:19px;letter-spacing:.35em;background:var(--paper-2);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;gap:8px}
+.serve.ready{background:var(--brand);color:#fff;box-shadow:0 4px 0 var(--brand-deep);animation:pulse 1s infinite}
+.serve.ready:active{transform:translateY(3px);box-shadow:0 1px 0 var(--brand-deep)}
+@keyframes pulse{50%{filter:brightness(1.15)}}
+
+/* ---------- result ---------- */
+.result{align-items:center;text-align:center;justify-content:center;gap:10px}
+.rank{font-family:var(--f-display);font-weight:900;font-size:clamp(30px,9vw,38px);color:var(--brand-deep);letter-spacing:.1em;margin:0}
+.stars{display:flex;gap:6px;justify-content:center}
+.stars svg{width:36px;height:36px}
+.bigscore{font-family:var(--f-display);font-weight:900;font-size:48px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;width:100%;max-width:340px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 0}
+.stats div+div{border-left:1px dotted var(--line)}
+.stats b{display:block;font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums;color:var(--brand-deep)}
+.stats span{font-size:11px;color:var(--ink-soft);letter-spacing:.1em}
+.receipt{font-size:13px;color:var(--ink-soft);max-width:320px;line-height:1.6}
+.newbest{color:var(--gold);font-weight:700;font-size:13px;letter-spacing:.1em}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app" id="app"></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+let uid=0;
+function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+function shade(hex,p){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.min(255,Math.round(p<0?v*(1+p):v+(255-v)*p)));return'#'+[n>>16,n>>8&255,n&255].map(v=>f(v).toString(16).padStart(2,'0')).join('')}
+function shuffle(a,r=Math.random){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const f1=v=>v.toFixed(1);
+function strands(r,o){
+  const {n,len,amp,freq,w,color,area,cx=0,cy=0,curl=0,steps=14}=o;const dark=o.dark||shade(color,-.32);
+  let under='',over='';
+  for(let i=0;i<n;i++){
+    const a=r()*Math.PI*2,d=Math.sqrt(r())*area;let x=cx+Math.cos(a)*d-len/2*Math.cos(a+1),y=cy+Math.sin(a)*d-len/2*Math.sin(a+1);let th=r()*Math.PI*2;
+    const pts=[[x,y]];
+    for(let s=1;s<=steps;s++){th+=curl*(r()-.5);x+=Math.cos(th)*len/steps;y+=Math.sin(th)*len/steps;const off=amp*Math.sin(freq*s+i*1.3);pts.push([x-Math.sin(th)*off,y+Math.cos(th)*off])}
+    const d2='M'+pts.map(p=>f1(p[0])+' '+f1(p[1])).join(' L');
+    under+=`<path d="${d2}" stroke="${dark}" stroke-width="${f1(w+1.6)}"/>`;over+=`<path d="${d2}" stroke="${color}" stroke-width="${f1(w)}"/>`;
+  }
+  return `<g fill="none" stroke-linecap="round" stroke-linejoin="round">${under}${over}</g>`;
+}
+function dots(r,n,area,cx,cy,fn){let s='';for(let i=0;i<n;i++){const a=r()*Math.PI*2,d=Math.sqrt(r())*area;s+=fn(cx+Math.cos(a)*d,cy+Math.sin(a)*d,r,i)}return s}
+
+/* ---------- i18n ---------- */
+const T={
+ zh:{brand:"久時拌麵",title:"拌麵出餐挑戰",sub:"90 秒內照單出餐，做得越快越準，分數越高。",how:["看點單，認清是哪一道菜","選對麵體，或送進對的工作站","加上配料，按鈴出餐"],start:"開　始",best:"最高分",score:"分數",time:"時間",rev:"營業額",table:"桌",combo:"連續完美 ×",hint:"看做法 −30",step1n:"選麵體",step1o:"選工作站",step2:"加配料",step2d:"依序完成",stepReady:"可以出餐了",serve:"出　餐",newDish:"新菜",cooking:{wok:"大火快炒中",oven:"蒸烤箱回溫中",stove:"爐火加熱中"},
+  msg:{wrongBase:"不是這個喔",noEgg:"這碗沒有溏心蛋！",order:"順序不對喔",wrong:"這道菜不加這個",late:"客人等太久了…",perfect:"完美出餐！",ok:"出餐！"},
+  served:"出餐",missed:"錯過",acc:"準確率",again:"再玩一次",home:"回首頁",newBest:"新紀錄！",receipt:(n,r)=>`這局你一共出了 ${n} 道菜，替久時賺進 $${r.toLocaleString()}。`,sound:["音效 開","音效 關"],
+  ranks:["洗碗小幫手","實習廚師","二廚","主廚認證"]},
+ en:{brand:"Josh's Noodles",title:"Noodle Rush",sub:"90 seconds to fill orders. The faster and cleaner you plate, the higher you score.",how:["Read the order ticket","Pick the right noodle, or the right station","Add the toppings and ring the bell"],start:"START",best:"Best",score:"Score",time:"Time",rev:"Sales",table:"Table",combo:"Perfect streak ×",hint:"Recipe −30",step1n:"Pick noodle",step1o:"Pick station",step2:"Add toppings",step2d:"In order",stepReady:"Ready to serve",serve:"SERVE",newDish:"NEW",cooking:{wok:"Stir-frying",oven:"Reheating in oven",stove:"Heating on stove"},
+  msg:{wrongBase:"Not that one",noEgg:"No egg in this bowl!",order:"Wrong order",wrong:"Not in this dish",late:"The guest waited too long…",perfect:"Perfect!",ok:"Served!"},
+  served:"Served",missed:"Missed",acc:"Accuracy",again:"Play again",home:"Home",newBest:"New best!",receipt:(n,r)=>`You served ${n} dishes and made $${r.toLocaleString()} for the shop.`,sound:["Sound on","Sound off"],
+  ranks:["Dish Helper","Trainee Cook","Sous Chef","Chef Approved"]}
+};
+
+/* ---------- icons (40×40) ---------- */
+const IC={
+ egg:`<ellipse cx="20" cy="21" rx="16" ry="12.5" fill="#b9793e"/><ellipse cx="20" cy="21" rx="13" ry="9.8" fill="#f4e8cf"/><circle cx="20" cy="21" r="6.8" fill="#ee8020"/><circle cx="18" cy="19" r="2.2" fill="#ffc46a" opacity=".85"/>`,
+ wagyu:`<path d="M5 15 Q20 6 35 12 L33 28 Q18 35 7 28Z" fill="#5b3022"/><path d="M10 16 L28 26 M15 13 L32 22 M8 22 L22 30" stroke="#33170f" stroke-width="2"/><path d="M8 15 Q20 9 33 13" stroke="#8a5038" stroke-width="1.5" fill="none"/>`,
+ kailan:`<path d="M7 33 Q19 22 33 8" stroke="#567f32" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M14 26 Q6 14 16 8 Q26 6 24 18 Q22 26 14 26Z" fill="#2f5a22"/><path d="M24 17 Q34 18 34 28 Q26 32 22 24Z" fill="#3d6b2a"/><circle cx="15" cy="15" r="1.6" fill="#16200f"/><circle cx="20" cy="11" r="1.3" fill="#16200f"/><circle cx="29" cy="25" r="1.4" fill="#16200f"/>`,
+ kongxin:`<g fill="none" stroke="#86c84a" stroke-width="3.2"><circle cx="13" cy="15" r="6"/><circle cx="26" cy="13" r="5.5"/><circle cx="19" cy="27" r="6"/><circle cx="31" cy="26" r="5"/></g><g fill="none" stroke="#5e9a2e" stroke-width="1"><circle cx="13" cy="15" r="4"/><circle cx="19" cy="27" r="4"/></g>`,
+ squid:`<path d="M9 31 Q6 15 21 8 Q32 5 33 13 Q31 26 14 33Z" fill="#e8a083"/><path d="M14 26 L26 14 M12 21 L22 12 M18 29 L29 18" stroke="#8a4632" stroke-width="2"/><path d="M8 31 Q4 36 2 38 M10 32 Q8 37 7 39" stroke="#c97a60" stroke-width="2" fill="none"/>`,
+ woodear:`<path d="M8 22 Q6 10 18 9 Q28 8 30 16 Q34 26 22 31 Q12 34 8 22Z" fill="#1d1816"/><path d="M14 18 Q20 14 25 19 Q22 25 16 24" stroke="#4d403b" stroke-width="2" fill="none"/><path d="M24 26 Q32 24 34 30 Q30 35 25 32Z" fill="#2b2320"/>`,
+ chayote:`<g fill="none" stroke="#4e8a33" stroke-width="2.4" stroke-linecap="round"><path d="M5 34 Q14 20 22 16 Q30 12 35 5"/><path d="M14 22 Q10 15 14 11 Q18 9 17 14"/><path d="M24 15 Q28 22 33 21 Q36 18 33 16"/></g><path d="M18 18 Q12 26 20 28 Q26 24 18 18Z" fill="#3f7a2a"/>`,
+ cordyceps:`<g fill="none" stroke="#ef7a2b" stroke-width="2.6" stroke-linecap="round"><path d="M6 32 Q14 18 12 6"/><path d="M12 34 Q22 20 20 8"/><path d="M19 34 Q28 24 30 10"/><path d="M26 35 Q34 26 35 16"/></g>`,
+ sorghum:`<g fill="#8b3c22"><circle cx="13" cy="15" r="3.2"/><circle cx="21" cy="12" r="3"/><circle cx="27" cy="18" r="3.2"/><circle cx="17" cy="22" r="3.1"/><circle cx="24" cy="26" r="3"/><circle cx="12" cy="27" r="3"/><circle cx="30" cy="27" r="2.8"/></g><g fill="#c0603a"><circle cx="12" cy="14" r="1"/><circle cx="26" cy="17" r="1"/><circle cx="23" cy="25" r="1"/></g>`,
+ karasumi:`<g fill="#f2a63a"><circle cx="12" cy="14" r="1.6"/><circle cx="18" cy="11" r="1.3"/><circle cx="25" cy="13" r="1.7"/><circle cx="30" cy="19" r="1.3"/><circle cx="15" cy="20" r="1.8"/><circle cx="22" cy="19" r="1.5"/><circle cx="28" cy="25" r="1.7"/><circle cx="11" cy="26" r="1.4"/><circle cx="19" cy="27" r="1.7"/><circle cx="24" cy="31" r="1.3"/><circle cx="16" cy="32" r="1.1"/></g><rect x="9" y="4" width="22" height="5" rx="2.5" fill="#d9822a"/>`,
+ cauli:`<g fill="#efe2c4"><circle cx="13" cy="16" r="7"/><circle cx="22" cy="12" r="7"/><circle cx="28" cy="20" r="6.5"/><circle cx="18" cy="23" r="7"/></g><rect x="17" y="26" width="5" height="9" rx="2" fill="#e3d4ad"/><g fill="#5f4e3c"><circle cx="12" cy="14" r="1.3"/><circle cx="22" cy="10" r="1.2"/><circle cx="28" cy="19" r="1.4"/><circle cx="18" cy="22" r="1.1"/><circle cx="25" cy="15" r="1"/></g>`,
+ chicken:`<g fill="none" stroke-linecap="round"><path d="M7 26 Q16 14 30 12" stroke="#d7bb98" stroke-width="5"/><path d="M8 30 Q20 22 33 22" stroke="#f1dec3" stroke-width="5"/><path d="M11 20 Q20 10 32 8" stroke="#ead2b2" stroke-width="4"/><path d="M12 33 Q22 30 31 30" stroke="#e5ccaa" stroke-width="4"/></g>`,
+ garlicKoji:`<path d="M8 28 Q6 18 16 16 Q18 8 26 12 Q34 14 32 24 Q30 32 20 32 Q11 33 8 28Z" fill="#e6d8a8"/><path d="M14 20 Q20 16 26 19" stroke="#fff6d8" stroke-width="2" fill="none"/><g fill="#c9b47a"><circle cx="15" cy="26" r="1.2"/><circle cx="23" cy="25" r="1"/><circle cx="27" cy="20" r="1"/></g>`,
+ barley:`<g fill="#f4ecd8" stroke="#c7b68c" stroke-width="1"><ellipse cx="13" cy="15" rx="4.2" ry="3.2"/><ellipse cx="22" cy="12" rx="4" ry="3"/><ellipse cx="28" cy="19" rx="4.2" ry="3.3"/><ellipse cx="17" cy="22" rx="4.4" ry="3.2"/><ellipse cx="25" cy="27" rx="4" ry="3"/><ellipse cx="12" cy="28" rx="3.8" ry="3"/></g><g fill="#6d5a40"><circle cx="13" cy="15" r=".9"/><circle cx="28" cy="19" r=".9"/><circle cx="17" cy="22" r=".9"/></g>`,
+ chervil:`<path d="M20 36 L20 18" stroke="#4c8e36" stroke-width="1.8"/><g fill="#4d9a38"><path d="M20 18 Q10 16 9 8 Q16 6 20 14Z"/><path d="M20 18 Q30 16 31 8 Q24 6 20 14Z"/><path d="M20 16 Q17 6 20 2 Q23 6 20 16Z"/><path d="M20 24 Q10 24 7 18 Q14 16 20 22Z"/><path d="M20 24 Q30 24 33 18 Q26 16 20 22Z"/></g>`,
+ duck:`<g fill="none" stroke-linecap="round"><path d="M8 27 Q18 16 31 13" stroke="#7d4a43" stroke-width="5"/><path d="M9 32 Q21 24 33 24" stroke="#9b6157" stroke-width="5"/><path d="M12 21 Q21 12 31 7" stroke="#b07a6c" stroke-width="3.5"/></g>`,
+ arugula:`<path d="M10 34 Q18 22 28 6" stroke="#3f7f2e" stroke-width="1.8" fill="none"/><g fill="#4f9d3c"><path d="M28 6 Q36 12 30 20 Q24 18 28 6Z"/><path d="M22 16 Q14 10 10 16 Q14 22 22 18Z"/><path d="M24 20 Q32 22 32 30 Q26 30 23 22Z"/><path d="M17 25 Q9 22 6 28 Q10 33 17 27Z"/></g>`,
+ crispyRice:`<g fill="#fcf8ee" stroke="#d6c9ac" stroke-width=".9"><ellipse cx="12" cy="15" rx="3.5" ry="2.4"/><ellipse cx="18" cy="12" rx="3.2" ry="2.3"/><ellipse cx="24" cy="14" rx="3.5" ry="2.4"/><ellipse cx="29" cy="19" rx="3.2" ry="2.3"/><ellipse cx="14" cy="21" rx="3.4" ry="2.4"/><ellipse cx="21" cy="20" rx="3.6" ry="2.5"/><ellipse cx="27" cy="25" rx="3.4" ry="2.3"/><ellipse cx="17" cy="27" rx="3.5" ry="2.4"/><ellipse cx="23" cy="31" rx="3.1" ry="2.2"/></g>`,
+ kombu:`<g fill="none" stroke="#2a2a28" stroke-width="3" stroke-linecap="round"><path d="M5 14 Q12 6 16 14 Q20 22 27 14 Q31 9 36 13"/><path d="M6 28 Q13 20 18 28 Q23 35 30 26"/></g><g fill="#8b8f8c"><circle cx="12" cy="10" r=".9"/><circle cx="22" cy="18" r=".9"/><circle cx="16" cy="27" r=".9"/><circle cx="27" cy="27" r=".9"/></g>`,
+ buckwheat:`<g fill="#c9a26a" stroke="#9d7a48" stroke-width=".8"><path d="M10 12 L15 10 L13 16Z"/><path d="M20 9 L25 11 L21 15Z"/><path d="M27 17 L32 19 L28 22Z"/><path d="M13 22 L18 20 L17 26Z"/><path d="M22 23 L27 24 L23 29Z"/><path d="M9 29 L14 28 L11 33Z"/><path d="M28 29 L33 30 L29 34Z"/></g>`,
+ gingerSoy:`<ellipse cx="20" cy="23" rx="16" ry="10" fill="#3b2516"/><ellipse cx="15" cy="20" rx="5" ry="2" fill="#6b4a32"/><g fill="#d8c48c"><circle cx="22" cy="25" r="1"/><circle cx="26" cy="21" r="1"/><circle cx="14" cy="27" r="1"/></g>`,
+ sugar:`<path d="M6 32 Q20 14 34 32Z" fill="#f7f6f2" stroke="#cfd3d8" stroke-width="1.2"/><g fill="#cfd3d8"><circle cx="14" cy="10" r="1"/><circle cx="20" cy="7" r="1"/><circle cx="26" cy="11" r="1"/><circle cx="18" cy="14" r=".8"/><circle cx="23" cy="16" r=".8"/></g>`,
+ miso:`<path d="M6 10 Q14 6 20 12 T34 12 M6 20 Q14 16 20 22 T34 22 M6 30 Q14 26 20 32 T34 32" stroke="#d29c2a" stroke-width="3.4" fill="none" stroke-linecap="round"/>`,
+ sesame:`<g fill="#fbf7ea" stroke="#c4b48a" stroke-width=".9"><ellipse cx="12" cy="13" rx="2.6" ry="1.6" transform="rotate(-30 12 13)"/><ellipse cx="22" cy="10" rx="2.6" ry="1.6" transform="rotate(20 22 10)"/><ellipse cx="29" cy="18" rx="2.6" ry="1.6"/><ellipse cx="16" cy="21" rx="2.6" ry="1.6" transform="rotate(40 16 21)"/><ellipse cx="25" cy="26" rx="2.6" ry="1.6" transform="rotate(-20 25 26)"/><ellipse cx="11" cy="29" rx="2.6" ry="1.6"/><ellipse cx="19" cy="31" rx="2.6" ry="1.6" transform="rotate(60 19 31)"/></g>`,
+ sauce:`<path d="M20 5 Q31 20 31 25 A11 11 0 0 1 9 25 Q9 20 20 5Z" fill="#c4802c"/><path d="M15 23 Q15 18 19 14" stroke="#efb867" stroke-width="2.2" fill="none" stroke-linecap="round"/>`,
+ nuts:`<g fill="#d8ad74" stroke="#a87d47" stroke-width=".8"><path d="M9 14 L15 11 L16 17 L10 18Z"/><path d="M20 9 L26 10 L24 15 L19 14Z"/><path d="M27 18 L33 19 L31 24 L26 23Z"/><path d="M14 22 L20 21 L19 27 L13 26Z"/><path d="M22 27 L28 27 L27 32 L21 31Z"/><path d="M8 28 L12 27 L12 32 L8 32Z"/></g>`,
+ garlicSoy:`<ellipse cx="20" cy="22" rx="15" ry="13" fill="#fdfdfb" stroke="#d6d6d0" stroke-width="1.4"/><ellipse cx="20" cy="22" rx="10.5" ry="9" fill="#d9761f"/><g fill="#f6c27c"><circle cx="17" cy="20" r="1.1"/><circle cx="23" cy="23" r="1.1"/><circle cx="19" cy="26" r="1"/><circle cx="24" cy="18" r="1"/></g>`,
+ lettuce:`<path d="M5 26 Q4 14 14 12 Q16 5 24 8 Q33 8 34 18 Q38 26 30 31 Q22 35 14 33 Q5 33 5 26Z" fill="#8fce4c"/><path d="M10 28 Q20 20 30 14 M16 22 L14 15 M22 19 L24 12 M26 22 L32 24" stroke="#c9ec8c" stroke-width="1.6" fill="none"/>`,
+ greenBean:`<g stroke-linecap="round" fill="none"><path d="M6 30 L32 8" stroke="#4f9a35" stroke-width="3"/><path d="M8 35 L35 16" stroke="#5aab3e" stroke-width="2.6"/><path d="M4 22 L24 5" stroke="#438a2d" stroke-width="2.6"/></g>`,
+ tremella:`<path d="M8 24 Q6 12 17 11 Q20 4 28 9 Q36 14 32 23 Q34 32 23 32 Q12 34 8 24Z" fill="#f3eddc" stroke="#d6c9a4" stroke-width="1.2"/><path d="M14 22 Q18 15 24 18 Q28 22 22 26" stroke="#d6c9a4" stroke-width="1.2" fill="none"/>`,
+ puree:`<path d="M6 28 Q4 18 14 16 Q16 8 25 10 Q35 12 34 22 Q36 31 24 33 Q10 35 6 28Z" fill="#f1ad1c"/><path d="M13 20 Q19 16 26 18" stroke="#fbd474" stroke-width="2" fill="none"/>`,
+ brownSugar:`<path d="M5 12 L35 8 M5 19 L35 15 M5 26 L35 22 M5 33 L35 29" stroke="#3f1d0e" stroke-width="2.6" stroke-linecap="round"/><g fill="#3f1d0e"><circle cx="35" cy="8" r="2"/><circle cx="35" cy="15" r="2"/><circle cx="35" cy="22" r="2"/><circle cx="35" cy="29" r="2"/></g>`,
+ nitroBall:`<circle cx="20" cy="21" r="14" fill="#fdfdfb" stroke="#dcdcd4" stroke-width="1.2"/><path d="M12 24 Q14 30 22 31" stroke="#e8e6dc" stroke-width="2.5" fill="none"/><circle cx="15" cy="15" r="3" fill="#fff"/>`,
+ fridge:`<rect x="9" y="4" width="22" height="32" rx="3" fill="#dfe5ec" stroke="#405880" stroke-width="2"/><path d="M9 15 H31" stroke="#405880" stroke-width="2"/><path d="M27 8 V12 M27 19 V27" stroke="#405880" stroke-width="2.2" stroke-linecap="round"/>`,
+ wok:`<path d="M4 18 H30 Q30 30 17 30 Q4 30 4 18Z" fill="#3a3f46"/><path d="M30 20 L38 16" stroke="#7a5a3a" stroke-width="3.4" stroke-linecap="round"/><path d="M10 14 Q12 10 10 6 M17 14 Q19 9 17 5 M24 14 Q26 10 24 6" stroke="#e0662c" stroke-width="2" fill="none" stroke-linecap="round"/>`,
+ oven:`<rect x="4" y="7" width="32" height="26" rx="3" fill="#dfe5ec" stroke="#405880" stroke-width="2"/><rect x="8" y="11" width="18" height="18" rx="2" fill="#2f3b4e"/><circle cx="31" cy="14" r="2" fill="#405880"/><circle cx="31" cy="21" r="2" fill="#405880"/><path d="M11 20 Q14 17 17 20 T23 20" stroke="#f0a050" stroke-width="1.6" fill="none"/>`,
+ stove:`<rect x="5" y="27" width="30" height="7" rx="2" fill="#3a3f46"/><path d="M20 6 Q28 14 26 20 Q25 25 20 26 Q14 25 14 20 Q13 15 18 12 Q18 17 21 17 Q22 12 20 6Z" fill="#e8662a"/><path d="M20 15 Q24 19 22 23 Q20 25 18 22 Q18 19 20 15Z" fill="#ffc04a"/>`,
+ glass:`<path d="M9 10 H31 L29 31 Q28 34 25 34 H15 Q12 34 11 31Z" fill="#e5f0f3" stroke="#8fb0bd" stroke-width="2"/><path d="M14 14 L13 28" stroke="#fff" stroke-width="2" stroke-linecap="round"/>`,
+};
+
+/* ---------- data ---------- */
+const NOODLE_STYLE={
+ curly:{n:34,len:34,amp:3.2,freq:2.2,w:4.6,curl:.9},
+ straight:{n:30,len:72,amp:1.4,freq:.5,w:3.6,curl:.25},
+ ribbon:{n:20,len:38,amp:4.2,freq:1.6,w:9,curl:.55},
+ thin:{n:42,len:44,amp:2.6,freq:1.9,w:2.8,curl:.75},
+};
+const BASES={
+ camellia:{zh:"山茶花粗捲麵",en:"Camellia thick curly",style:"curly",color:"#e7b64a"},
+ squidink:{zh:"墨魚汁中直麵",en:"Squid ink straight",style:"straight",color:"#202027"},
+ knife:{zh:"刀削波浪麵",en:"Knife-cut wavy",style:"ribbon",color:"#ecc56a"},
+ golden:{zh:"澳洲黃金小麥中直麵",en:"Golden wheat straight",style:"straight",color:"#e2c26a"},
+ stone:{zh:"石臼細扁麵",en:"Stone-mill thin flat",style:"thin",color:"#d6b06a"},
+ fridge:{zh:"冰箱",en:"Fridge"},wok:{zh:"炒鍋",en:"Wok",wait:1.3},oven:{zh:"蒸烤箱",en:"Combi oven",wait:1.5},stove:{zh:"爐火",en:"Stove",wait:1.5},glass:{zh:"玻璃小盅",en:"Glass cup"},
+};
+const NOODLE_BASES=["camellia","squidink","knife","golden","stone"];
+const STATION_BASES=["fridge","wok","oven","stove","glass"];
+const ITEMS={
+ egg:["溏心蛋","Soft egg"],wagyu:["炙燒和牛臉頰","Seared wagyu cheek"],kailan:["炙燒芥藍花","Charred kailan"],kongxin:["醋漬空心菜","Pickled water spinach"],
+ squid:["炙燒中卷","Seared squid"],woodear:["醋漬雲耳","Pickled wood ear"],chayote:["龍鬚菜","Chayote shoots"],cordyceps:["蟲草花","Cordyceps flower"],
+ sorghum:["炸高粱","Fried sorghum"],karasumi:["烏魚子粉","Mullet roe powder"],cauli:["炙燒白花椰","Charred cauliflower"],chicken:["雞肉絲","Shredded chicken"],
+ garlicKoji:["大蒜鹽麴醬","Garlic shio-koji"],barley:["炸薏仁","Fried Job's tears"],chervil:["山蘿蔔葉","Chervil"],duck:["鴨腿絲","Shredded duck"],
+ arugula:["芝麻葉","Arugula"],crispyRice:["炸鍋巴","Crispy rice"],
+ kombu:["鹽昆布絲","Shio kombu"],buckwheat:["炸蕎麥","Fried buckwheat"],gingerSoy:["薑汁醬油","Ginger soy"],sugar:["糖粉","Powdered sugar"],
+ miso:["味噌醬","Miso sauce"],sesame:["白芝麻","White sesame"],sauce:["淋醬汁","Sauce"],nuts:["堅果碎","Crushed nuts"],
+ garlicSoy:["蒜蓉醬油","Garlic soy dip"],lettuce:["生菜","Lettuce"],greenBean:["四季豆絲","Green bean strips"],
+ tremella:["銀耳雪燕","Snow fungus"],puree:["地瓜南瓜醬","Yam-pumpkin purée"],brownSugar:["黑糖","Brown sugar"],nitroBall:["氮氣球","Nitro foam"],
+};
+const POOL={
+ noodle:["egg","wagyu","kailan","kongxin","squid","woodear","chayote","cordyceps","sorghum","karasumi","cauli","chicken","garlicKoji","barley","chervil","duck","arugula","crispyRice"],
+ side:["kombu","buckwheat","gingerSoy","sugar","miso","sesame","sauce","nuts","garlicSoy","lettuce"],
+ soup:["greenBean","cordyceps","chervil","kongxin","sesame","sorghum"],
+ dessert:["tremella","puree","brownSugar","nitroBall","sugar","sesame"],
+};
+const DISHES=[
+ {id:"n1",cat:"noodle",no:"①",zh:"炙燒和牛臉頰拌麵",en:"Seared Wagyu Beef Cheek Noodles",price:380,base:"camellia",items:["wagyu","kailan","egg","kongxin"],sauce:"#e6a447",bowl:{rim:"#4a392d",inner:"#efe7d3",deco:"speckle"}},
+ {id:"n2",cat:"noodle",no:"②",zh:"黑豉椒香墨魚麵",en:"Squid Ink Noodles with Black Bean & Chili",price:290,base:"squidink",items:["squid","kailan","egg","woodear"],sauce:"#18181d",bowl:{rim:"#1f2125",inner:"#eef1f4",deco:"waves"}},
+ {id:"n3",cat:"noodle",no:"③",zh:"蝦汁烏魚子刀削麵",en:"Knife-Cut Noodles with Prawn Jus & Mullet Roe",price:280,base:"knife",items:["chayote","cordyceps","sorghum","karasumi"],sauce:"#e8963c",bowl:{rim:"#2b2b2b",inner:"#f6f2e8",deco:"thin"},ring:["chayote","cordyceps"],center:["sorghum","karasumi"]},
+ {id:"n4",cat:"noodle",no:"④",zh:"野菜雞絲拌麵",en:"Shredded Chicken Noodles with Wild Greens",price:280,base:"golden",items:["cauli","chicken","garlicKoji","barley","egg","chervil"],sauce:"#5cba3a",bowl:{rim:"#2b2d31",inner:"#efe9da",deco:"stripes"}},
+ {id:"n5",cat:"noodle",no:"⑤",zh:"油封鴨腿絲拌麵",en:"Shredded Duck Leg Confit Noodles",price:260,base:"stone",items:["duck","arugula","egg","crispyRice"],sauce:"#c99e55",bowl:{rim:"#5a7085",inner:"#b8996b",deco:"speckle"}},
+ {id:"s1",cat:"side",zh:"昆布漬黃瓜",en:"Kombu-Marinated Cucumber",price:40,base:"fridge",items:["kombu"],plate:"sqgrey"},
+ {id:"s2",cat:"side",zh:"川麻雨來菇",en:"Sichuan Mala Nostoc Commune",price:60,base:"fridge",items:["buckwheat"],plate:"sqgrey"},
+ {id:"s3",cat:"side",zh:"薑汁番茄",en:"Tomatoes with Ginger Soy Dip",price:60,base:"fridge",items:["gingerSoy","sugar"],plate:"roundred"},
+ {id:"s4",cat:"side",zh:"豆香味噌秋葵",en:"Okra with Miso Bean Dressing",price:60,base:"fridge",items:["miso"],plate:"roundpat"},
+ {id:"s5",cat:"side",zh:"紅麴高麗菜乾",en:"Red Koji Dried Cabbage",price:60,base:"fridge",items:["sesame"],plate:"roundpat"},
+ {id:"s6",cat:"side",zh:"堅果豆腐",en:"Nut Tofu",price:60,base:"fridge",items:["sauce","nuts"],plate:"sqgrey"},
+ {id:"s7",cat:"side",zh:"肉香花椰菜乾",en:"Dried Cauliflower with Savory Pork",price:120,base:"wok",items:[],plate:"rectdark"},
+ {id:"s8",cat:"side",zh:"油封白切松阪豬",en:"Sliced Confit Pork Jowl",price:180,base:"oven",items:["garlicSoy"],plate:"rectdark"},
+ {id:"s9",cat:"side",zh:"辣炒筍牛肚",en:"Stir-Fried Beef Tripe with Bamboo Shoots",price:220,base:"wok",items:[],plate:"rectdark"},
+ {id:"s10",cat:"side",zh:"油封文昌雞腿",en:"Wenchang Chicken Leg Confit",price:240,base:"oven",items:["lettuce","sauce"],plate:"rectceladon"},
+ {id:"p1",cat:"soup",zh:"酸白菜蔬菜湯",en:"Pickled Cabbage Vegetable Soup",price:80,base:"stove",items:["greenBean"],broth:"#d7a246"},
+ {id:"p2",cat:"soup",zh:"干貝燉雞湯",en:"Chicken Soup with Dried Scallops",price:200,base:"stove",items:["cordyceps"],broth:"#ead9a2"},
+ {id:"d1",cat:"dessert",zh:"主廚甜品",en:"Chef's Dessert",price:90,base:"glass",items:["tremella","puree","brownSugar","nitroBall"],ordered:true},
+];
+const byId=Object.fromEntries(DISHES.map(d=>[d.id,d]));
+const ORDER_TIME={noodle:20,side:14,soup:15,dessert:17};
+
+/* ---------- drawing ---------- */
+function icon(id,size){return `<svg viewBox="0 0 40 40" width="${size||44}" height="${size||44}" aria-hidden="true">${IC[id]||""}</svg>`}
+function noodleSwatch(b){const s=NOODLE_STYLE[BASES[b].style],c=BASES[b].color,id="sw"+(++uid);
+  return `<svg viewBox="0 0 40 40" aria-hidden="true"><defs><clipPath id="${id}"><circle cx="20" cy="20" r="17"/></clipPath></defs><circle cx="20" cy="20" r="18" fill="#f3efe4" stroke="#bcc6d5"/><g clip-path="url(#${id})">${strands(rng(b.length*31),{n:Math.round(s.n*.35),len:s.len*.38,amp:s.amp*.45,freq:s.freq,w:s.w*.5,curl:s.curl,color:c,area:13,cx:20,cy:20,steps:10})}</g></svg>`}
+function baseIcon(b){return NOODLE_BASES.includes(b)?noodleSwatch(b):icon(b)}
+function place(id,x,y,s,rot){return `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${rot||0}) scale(${s}) translate(-20 -20)">${IC[id]}</g>`}
+
+const SLOTS=[[0,-46],[-48,4],[46,12],[-4,48],[-34,-34],[38,-32]];
+function drawBowl(d,st){
+  const b=d.bowl,cid="nc"+(++uid);let s=`<circle cx="120" cy="126" r="112" fill="rgba(35,49,74,.13)"/><circle cx="120" cy="120" r="112" fill="${b.rim}"/>`;
+  if(b.deco==="thin"){s+=`<circle cx="120" cy="120" r="108" fill="${b.inner}"/>`}
+  else{s+=`<circle cx="120" cy="120" r="99" fill="${b.inner}"/>`}
+  const r=rng(d.id.charCodeAt(1)*97);
+  if(b.deco==="speckle")s+=dots(r,140,104,120,120,(x,y)=>Math.hypot(x-120,y-120)>80?`<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(1+r()*1.6)}" fill="${shade(b.inner,-.22)}" opacity=".7"/>`:"");
+  if(b.deco==="waves"){for(let i=0;i<5;i++){s+=`<path d="M${40+i*8} ${150+i*6} Q120 ${92+i*10} ${200-i*8} ${150+i*6}" stroke="#2f4f8a" stroke-width="2.2" fill="none" opacity=".75"/>`}s+=dots(r,70,98,120,120,(x,y)=>`<circle cx="${f1(x)}" cy="${f1(y)}" r="1.4" fill="#5f7fb0" opacity=".5"/>`)}
+  if(b.deco==="stripes"){for(let i=0;i<48;i++){const a=i/48*Math.PI*2;s+=`<line x1="${f1(120+Math.cos(a)*76)}" y1="${f1(120+Math.sin(a)*76)}" x2="${f1(120+Math.cos(a)*98)}" y2="${f1(120+Math.sin(a)*98)}" stroke="#6e7178" stroke-width="1"/>`}}
+  s+=`<defs><clipPath id="${cid}"><circle cx="120" cy="120" r="74"/></clipPath></defs>`;
+  if(st.base){const ns=NOODLE_STYLE[BASES[d.base].style];s+=`<g clip-path="url(#${cid})">${strands(rng(7+d.id.charCodeAt(1)),{...ns,color:d.sauce,area:58,cx:120,cy:120})}</g>`}
+  const added=st.added||[];
+  d.items.forEach((it,i)=>{
+    if(!added.includes(it))return;
+    if(d.ring&&d.ring.includes(it)){const off=d.ring.indexOf(it)*22.5;for(let k=0;k<8;k++){const a=(k*45+off)*Math.PI/180;s+=place(it,120+Math.cos(a)*78,120+Math.sin(a)*78,1.05,k*45+off+90)}return}
+    if(d.center&&d.center.includes(it)){s+=place(it,120,120,it==="karasumi"?1.7:1.5,0);return}
+    const [x,y]=SLOTS[i%SLOTS.length];s+=place(it,120+x,120+y,1.45,(i*37)%30-15);
+  });
+  return s;
+}
+const PLATES={
+ sqgrey:()=>{let s=`<rect x="22" y="26" width="200" height="200" rx="14" fill="rgba(35,49,74,.13)"/><rect x="20" y="20" width="200" height="200" rx="14" fill="#aeb6bd"/><rect x="54" y="54" width="132" height="132" rx="4" fill="#c2c9cf"/>`;for(let i=0;i<14;i++){s+=`<line x1="28" x2="212" y1="${28+i*13.5}" y2="${28+i*13.5}" stroke="#9aa3ab" stroke-width="1" opacity=".55"/>`}return s},
+ rectdark:()=>{let s=`<rect x="10" y="56" width="224" height="140" rx="8" fill="rgba(35,49,74,.15)"/><rect x="8" y="50" width="224" height="140" rx="8" fill="#555c56"/>`;for(let i=0;i<12;i++){s+=`<line x1="14" x2="226" y1="${58+i*11}" y2="${58+i*11}" stroke="#454b46" stroke-width="1.4"/>`}return s},
+ rectceladon:()=>`<rect x="10" y="56" width="224" height="140" rx="10" fill="rgba(35,49,74,.15)"/><rect x="8" y="50" width="224" height="140" rx="10" fill="#c8a777"/><rect x="16" y="58" width="208" height="124" rx="6" fill="#7f948d"/>`,
+ roundred:()=>`<circle cx="120" cy="126" r="106" fill="rgba(35,49,74,.13)"/><circle cx="120" cy="120" r="106" fill="#fcfbf7" stroke="#e1ded6"/><circle cx="120" cy="120" r="98" fill="none" stroke="#8a2c22" stroke-width="2.4"/><circle cx="120" cy="120" r="80" fill="#f6f4ee"/>`,
+ roundpat:()=>{let s=`<circle cx="120" cy="126" r="106" fill="rgba(35,49,74,.13)"/><circle cx="120" cy="120" r="106" fill="#fbf8ee" stroke="#e1ded6"/><circle cx="120" cy="120" r="94" fill="none" stroke="#d9d0b3" stroke-width="11"/>`;for(let i=0;i<4;i++){const a=i*Math.PI/2+.6;s+=`<rect x="${f1(120+Math.cos(a)*94-4)}" y="${f1(120+Math.sin(a)*94-4)}" width="8" height="8" fill="#e6b98a" transform="rotate(45 ${f1(120+Math.cos(a)*94)} ${f1(120+Math.sin(a)*94)})"/>`}return s},
+};
+const SIDE_FOOD={
+ s1:r=>{let s='';[[-8,-30,-18],[10,-12,-8],[-14,6,-22],[6,22,-12],[-4,40,-20],[20,2,-30],[-22,-12,-6]].forEach(([x,y,a])=>{s+=`<g transform="translate(${120+x} ${120+y}) rotate(${a})"><path d="M-40 0 Q0 -13 40 0 Q0 13 -40 0Z" fill="#5c9733"/><path d="M-33 0 Q0 -7 33 0 Q0 7 -33 0Z" fill="#c9d35b"/></g>`});return s},
+ s2:r=>dots(r,46,42,120,120,(x,y)=>`<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(6+r()*6)}" ry="${f1(4+r()*5)}" fill="${["#3a2818","#5b3e22","#78532c","#2a1d12"][Math.floor(r()*4)]}" transform="rotate(${Math.floor(r()*180)} ${f1(x)} ${f1(y)})"/>`),
+ s3:()=>{let s='';for(let i=0;i<6;i++){s+=`<g transform="translate(120 120) rotate(${i*60-90})"><path d="M8 -12 Q46 -22 58 0 Q46 22 8 12Z" fill="#d8432d"/><path d="M18 -6 Q42 -12 48 0 Q42 12 18 6Z" fill="#ee7a5a"/><path d="M24 0 L42 0" stroke="#f3e0a0" stroke-width="2.4" stroke-linecap="round"/></g>`}return s},
+ s4:()=>{let s='';[[86,-6],[104,4],[122,-4],[140,6]].forEach(([x,o])=>{s+=`<rect x="${x-9}" y="${70+o}" width="18" height="96" rx="8" fill="#5daf42"/><line x1="${x}" x2="${x}" y1="${76+o}" y2="${160+o}" stroke="#3f8a2c" stroke-width="1.4"/>`});return s},
+ s5:r=>strands(r,{n:34,len:34,amp:2.5,freq:1.4,w:5.5,curl:.8,color:"#e98a48",area:36,cx:120,cy:120}),
+ s6:()=>{let s='';[[-26,-26],[26,-26],[-26,26],[26,26]].forEach(([x,y])=>{s+=`<g transform="translate(${120+x} ${120+y}) rotate(45)"><rect x="-24" y="-24" width="48" height="48" rx="3" fill="#d9c7b0"/><rect x="-20" y="-24" width="44" height="44" rx="3" fill="#ecdcc6"/></g>`});return s},
+ s7:r=>strands(r,{n:22,len:44,amp:1.5,freq:.7,w:6,curl:.6,color:"#c79457",area:40,cx:120,cy:120})+dots(r,16,48,120,120,(x,y)=>`<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(6+r()*4)}" fill="#b98652"/>`)+dots(r,6,52,120,120,(x,y)=>`<rect x="${f1(x-7)}" y="${f1(y-7)}" width="14" height="14" rx="3" fill="#c9862f"/>`)+dots(r,14,50,120,120,(x,y)=>`<circle cx="${f1(x)}" cy="${f1(y)}" r="3" fill="none" stroke="#7cc04a" stroke-width="2"/>`),
+ s8:()=>{let s='';for(let i=0;i<7;i++){const x=104+i*15,a=-24+i*6;s+=`<g transform="translate(${x} 122) rotate(${a})"><path d="M-14 -42 Q16 -48 18 -20 L16 40 Q-6 46 -14 30Z" fill="#edd0ca" stroke="#f0e0b2" stroke-width="3"/></g>`}return s},
+ s9:r=>strands(r,{n:26,len:34,amp:2.8,freq:2.4,w:7,curl:.7,color:"#7b4f2d",area:40,cx:120,cy:120})+dots(r,7,46,120,120,(x,y)=>`<rect x="${f1(x-5)}" y="${f1(y-18)}" width="10" height="36" rx="5" fill="#f2d468" transform="rotate(${Math.floor(r()*180)} ${f1(x)} ${f1(y)})"/>`)+dots(r,6,46,120,120,(x,y)=>`<rect x="${f1(x-3)}" y="${f1(y-12)}" width="6" height="24" rx="3" fill="#4f9a38" transform="rotate(${Math.floor(r()*180)} ${f1(x)} ${f1(y)})"/>`),
+ s10:()=>{let s='';for(let i=0;i<11;i++){const x=56+i*12.5,y=120+(i%2?4:-4);s+=`<rect x="${x-8}" y="${y-28}" width="16" height="56" rx="6" fill="#efc7b4"/><rect x="${x-8}" y="${y-28}" width="16" height="18" rx="6" fill="#f2bf48"/>`}return s},
+};
+const SIDE_OVER={
+ kombu:r=>`<g fill="none" stroke="#252523" stroke-width="3.4" stroke-linecap="round"><path d="M70 96 Q90 80 104 98 Q116 114 134 96 Q150 82 170 100"/><path d="M84 146 Q100 128 116 146 Q130 160 154 140"/></g>`,
+ buckwheat:r=>dots(r,24,46,120,120,(x,y)=>`<path d="M${f1(x)} ${f1(y-3)} L${f1(x+4)} ${f1(y+3)} L${f1(x-4)} ${f1(y+3)}Z" fill="#d8b47a" stroke="#a37e4a" stroke-width=".8"/>`),
+ gingerSoy:()=>`<circle cx="120" cy="120" r="58" fill="#3a2416" opacity=".92"/>`,
+ sugar:r=>dots(r,220,72,120,120,(x,y)=>`<circle cx="${f1(x)}" cy="${f1(y)}" r="1" fill="#fff" opacity=".9"/>`),
+ miso:()=>{let s='';for(let i=0;i<9;i++){s+=`<path d="M72 ${84+i*10} Q100 ${78+i*10} 112 ${86+i*10} T152 ${84+i*10}" stroke="#d29b28" stroke-width="3.4" fill="none" stroke-linecap="round"/>`}return s+`<ellipse cx="178" cy="122" rx="22" ry="26" fill="#cf8e2a"/>`},
+ sesame:r=>dots(r,28,44,120,120,(x,y)=>`<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="2.6" ry="1.5" fill="#fbf7ea" transform="rotate(${Math.floor(r()*180)} ${f1(x)} ${f1(y)})"/>`),
+ sauce:(r,d)=>d.id==="s6"?[[-26,-26],[26,-26],[-26,26],[26,26]].map(([x,y])=>`<rect x="${120+x-20}" y="${120+y-20}" width="40" height="40" rx="6" fill="#c97f2e" opacity=".85" transform="rotate(45 ${120+x} ${120+y})"/>`).join(""):`<path d="M60 116 Q120 100 180 118" stroke="#a8742e" stroke-width="12" fill="none" stroke-linecap="round" opacity=".9"/>`,
+ nuts:r=>dots(r,40,52,120,120,(x,y)=>`<rect x="${f1(x-2.5)}" y="${f1(y-2.5)}" width="5" height="5" rx="1" fill="#e4bd84"/>`),
+ garlicSoy:()=>place("garlicSoy",46,120,1.8,0),
+ lettuce:()=>[60,96,132,170].map((x,i)=>place("lettuce",x,120+(i%2?10:-10),1.9,i*40)).join(""),
+};
+const UNDER=["gingerSoy","lettuce"];
+function drawSide(d,st){
+  const r=rng(d.id.length*131+d.id.charCodeAt(1));let s=PLATES[d.plate]();const added=st.added||[];
+  d.items.forEach(it=>{if(UNDER.includes(it)&&added.includes(it))s+=SIDE_OVER[it](rng(3),d)});
+  if(st.base)s+=SIDE_FOOD[d.id](r);
+  d.items.forEach(it=>{if(!UNDER.includes(it)&&added.includes(it))s+=SIDE_OVER[it](rng(it.length*17),d)});
+  return s;
+}
+function drawSoup(d,st){
+  const lid=`<g transform="translate(64 112)"><circle r="60" fill="#fbfaf6" stroke="#ddd9cf"/>${["#d9533c","#5aa64a","#3c5fa8","#7a4a2a"].map((c,i)=>`<path d="M0 0 L${f1(Math.cos(i*1.57+.3)*60)} ${f1(Math.sin(i*1.57+.3)*60)} A60 60 0 0 1 ${f1(Math.cos(i*1.57+.9)*60)} ${f1(Math.sin(i*1.57+.9)*60)}Z" fill="${c}"/>`).join("")}<circle r="30" fill="#fbfaf6" stroke="#b08a4a" stroke-width="2"/><circle r="22" fill="#fff" stroke="#e1ddd2"/></g>`;
+  let s=`<circle cx="152" cy="132" r="84" fill="rgba(35,49,74,.13)"/>${lid}<circle cx="152" cy="126" r="84" fill="#fbfaf6" stroke="#5b4a3a" stroke-width="3"/><circle cx="152" cy="126" r="70" fill="${st.base?d.broth:"#f2efe7"}"/>`;
+  const r=rng(d.id.charCodeAt(1)*7);
+  if(st.base){
+    if(d.id==="p1"){s+=dots(r,9,50,152,126,(x,y)=>`<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="12" ry="6" fill="#3d7a2c" transform="rotate(${Math.floor(r()*180)} ${f1(x)} ${f1(y)})"/>`)+dots(r,8,48,152,126,(x,y)=>`<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="10" ry="5" fill="#efe1ad"/>`)+dots(r,4,40,152,126,(x,y)=>`<rect x="${f1(x-4)}" y="${f1(y-6)}" width="8" height="12" rx="2" fill="#e0603e"/>`)}
+    else{s+=`<path d="M140 120 Q160 110 170 132 Q168 150 150 150 Q134 146 140 120Z" fill="#e3c9ae"/><path d="M152 106 L156 132 M146 108 L148 128 M160 108 L162 128" stroke="#f4ecd2" stroke-width="2"/>`}
+  }
+  if((st.added||[]).includes("greenBean"))s+=dots(rng(9),12,46,152,126,(x,y)=>`<path d="M${f1(x-10)} ${f1(y+6)} L${f1(x+10)} ${f1(y-6)}" stroke="#4f9a35" stroke-width="3" stroke-linecap="round"/>`);
+  if((st.added||[]).includes("cordyceps"))s+=place("cordyceps",152,118,1.5,0)+place("cordyceps",162,128,1.2,60);
+  return s;
+}
+function drawDessert(d,st){
+  let s=PLATES.roundred();
+  if(st.base)s+=`<circle cx="120" cy="120" r="74" fill="#eaf2f4" stroke="#c4d6dc" stroke-width="6" opacity=".95"/><circle cx="120" cy="120" r="62" fill="#f6f9fa"/>`;
+  const a=st.added||[];
+  if(a.includes("tremella"))s+=dots(rng(5),8,34,120,120,(x,y)=>place("tremella",x,y,1,0));
+  if(a.includes("puree"))s+=`<circle cx="120" cy="120" r="58" fill="#f1ad1c"/>`;
+  if(a.includes("brownSugar")){for(let i=0;i<9;i++){s+=`<path d="M${74+i*6} ${82+i*9} L${164-i*2} ${76+i*9}" stroke="#3a1a0c" stroke-width="3" stroke-linecap="round" opacity=".9"/>`}}
+  if(a.includes("nitroBall"))s+=`<circle cx="98" cy="98" r="24" fill="#fdfdfb" stroke="#e1e0d8"/><path d="M84 104 Q90 116 104 117" stroke="#e8e6dc" stroke-width="3" fill="none"/>`;
+  return s;
+}
+function drawDish(d,st){
+  const inner=d.cat==="noodle"?drawBowl(d,st):d.cat==="side"?drawSide(d,st):d.cat==="soup"?drawSoup(d,st):drawDessert(d,st);
+  return `<svg viewBox="0 0 240 240" role="img" aria-label="${d.zh}">${inner}</svg>`;
+}
+
+/* ---------- sound ---------- */
+let actx=null,soundOn=true;
+function tone(freq,dur,type,vol,delay){if(!soundOn||!actx)return;const t=actx.currentTime+(delay||0),o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+dur)}
+const sfx={ding:()=>{tone(1318,.5,"sine",.25);tone(1760,.6,"sine",.18,.09)},tap:()=>tone(660,.07,"triangle",.12),buzz:()=>tone(150,.18,"square",.07),end:()=>{[784,988,1175,1568].forEach((f,i)=>tone(f,.4,"sine",.18,i*.12))}};
+
+/* ---------- state ---------- */
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let lang=store.get("jjs-lang")==="en"?"en":"zh";soundOn=store.get("jjs-sound")!=="off";
+const L=()=>T[lang];const nm=x=>lang==="zh"?x.zh:x.en;const itemName=id=>ITEMS[id][lang==="zh"?0:1];
+const GAME_LEN=90;
+let G=null,raf=0,last=0,toastTimer=0;
+const app=$("#app");
+
+function startScreen(){
+  cancelAnimationFrame(raf);G=null;
+  const best=+store.get("jjs-best")||0;
+  app.innerHTML=`<div class="screen">
+   <div class="brandline"><b>|</b>${L().brand}<b>|</b></div>
+   <div class="hero">${drawDish(byId.n1,{base:true,added:byId.n1.items})}</div>
+   <h1>${L().title}</h1>
+   <p class="sub">${L().sub}</p>
+   <ol class="how">${L().how.map((h,i)=>`<li><span>${i+1}</span>${h}</li>`).join("")}</ol>
+   <div class="toggles">
+    <div class="seg" role="group" aria-label="Language"><button id="lz" aria-pressed="${lang==="zh"}">中文</button><button id="le" aria-pressed="${lang==="en"}">English</button></div>
+    <div class="seg"><button id="snd" aria-pressed="${soundOn}">${L().sound[soundOn?0:1]}</button></div>
+   </div>
+   <button class="primary" id="go">${L().start}</button>
+   <div class="best">${best?`${L().best} ${best.toLocaleString()}`:""}</div>
+   <div class="spacer"></div></div>`;
+  $("#lz").onclick=()=>{lang="zh";store.set("jjs-lang","zh");startScreen()};
+  $("#le").onclick=()=>{lang="en";store.set("jjs-lang","en");startScreen()};
+  $("#snd").onclick=()=>{soundOn=!soundOn;store.set("jjs-sound",soundOn?"on":"off");startScreen()};
+  $("#go").onclick=startGame;
+}
+
+function startGame(){
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume&&actx.resume()}catch(e){}
+  G={t:GAME_LEN,score:0,combo:0,best:0,served:0,revenue:0,missed:0,mistakes:0,taps:0,seen:new Set(),order:null,lastId:null};
+  app.innerHTML=`<div class="screen">
+   <div><div class="hud">
+     <div><div class="lbl">${L().score}</div><div class="val" id="hs">0</div></div>
+     <div class="clock" id="hc"><div class="lbl">${L().time}</div><div class="val" id="ht">90</div></div>
+     <div class="r"><div class="lbl">${L().rev}</div><div class="val" id="hr">$0</div></div>
+   </div><div class="timebar"><i id="htb"></i></div><div class="combo" id="hcombo"></div></div>
+   <div class="ticket" id="ticket"></div>
+   <div class="stage" id="stage"></div>
+   <div><div class="trayhead"><div class="step" id="step"></div><div class="stepnote" id="stepnote"></div></div>
+   <div class="tray" id="tray"></div>
+   <button class="serve" id="serve" disabled>${L().serve}</button></div>
+  </div>`;
+  $("#serve").onclick=serve;
+  newOrder();last=performance.now();raf=requestAnimationFrame(loop);
+}
+
+function pickDish(){
+  const el=GAME_LEN-G.t;let w;
+  if(el<20)w={noodle:1};else if(el<45)w={noodle:.6,side:.4};else w={noodle:.45,side:.3,soup:.15,dessert:.1};
+  let x=Math.random(),cat="noodle";for(const k in w){if((x-=w[k])<=0){cat=k;break}}
+  const list=DISHES.filter(d=>d.cat===cat&&d.id!==G.lastId);return list[Math.floor(Math.random()*list.length)];
+}
+function newOrder(){
+  const d=pickDish();G.lastId=d.id;
+  const pool=POOL[d.cat].filter(i=>!d.items.includes(i));
+  const size=d.cat==="noodle"?8:6;
+  let extra=shuffle(pool).slice(0,Math.max(0,size-d.items.length));
+  if(d.id==="n3"&&!extra.includes("egg"))extra[0]="egg";
+  const tmax=ORDER_TIME[d.cat]*(GAME_LEN-G.t>45?.88:1);
+  G.order={d,phase:"base",added:[],tmax,tl:tmax,first:!G.seen.has(d.id),hint:false,tiles:shuffle(d.items.concat(extra)),table:1+Math.floor(Math.random()*8),mist:0};
+  G.seen.add(d.id);
+  renderTicket();renderStage();renderTray();
+}
+function renderTicket(){
+  const o=G.order,d=o.d,show=o.first||o.hint;
+  const steps=[{name:nm(BASES[d.base]),done:o.phase!=="base",base:1}].concat(d.items.map(i=>({name:itemName(i),done:o.added.includes(i)})));
+  $("#ticket").innerHTML=`<div class="t-top"><span>${L().table} ${o.table}</span><span>$${d.price}</span></div>
+   <div class="t-name">${d.no?d.no+" ":""}${nm(d)}${o.first?`<small>${L().newDish}</small>`:""}</div>
+   <div class="chips">${steps.map(s=>`<span class="chip${s.base?" base":""}${s.done?" done":""}">${show||s.done?s.name:"？"}</span>`).join("")}</div>
+   <div class="t-row"><div class="t-bar" id="tbar"><i></i></div><button class="hintbtn" id="hint" ${show?"disabled":""}>${L().hint}</button></div>`;
+  $("#hint").onclick=()=>{if(o.hint||o.first)return;o.hint=true;G.score=Math.max(0,G.score-30);G.combo=0;renderTicket();renderHUD()};
+  updateOrderBar();
+}
+function renderStage(){
+  const o=G.order;const st={base:o.phase!=="base"&&o.phase!=="cooking",added:o.added};
+  let extra="";if(o.phase==="cooking")extra=`<div class="cooking"><div><span class="ring"></span>${L().cooking[o.d.base]}</div></div>`;
+  $("#stage").innerHTML=drawDish(o.d,st)+extra+`<div class="toast" id="toast"></div>`;
+}
+function renderTray(){
+  const o=G.order,d=o.d,tray=$("#tray"),stepEl=$("#step"),note=$("#stepnote"),sv=$("#serve");
+  let tiles=[];
+  if(o.phase==="base"||o.phase==="cooking"){
+    const opts=d.cat==="noodle"?NOODLE_BASES:STATION_BASES;
+    stepEl.innerHTML=`1<b>|</b>${d.cat==="noodle"?L().step1n:L().step1o}`;note.textContent="";
+    tiles=opts.map(b=>`<button class="tile" data-b="${b}" ${o.phase==="cooking"?"disabled":""}>${baseIcon(b)}<span>${nm(BASES[b])}</span></button>`);
+  }else{
+    stepEl.innerHTML=o.phase==="ready"?`✓<b>|</b>${L().stepReady}`:`2<b>|</b>${L().step2}`;note.textContent=d.ordered&&o.phase!=="ready"?L().step2d:"";
+    tiles=d.items.length?o.tiles.map(i=>`<button class="tile${o.added.includes(i)?" used":""}" data-i="${i}" ${o.phase==="ready"?"disabled":""}>${icon(i)}<span>${itemName(i)}</span></button>`):[];
+  }
+  tray.innerHTML=tiles.join("");
+  tray.querySelectorAll(".tile").forEach(b=>b.onclick=()=>b.dataset.b?pickBase(b):pickItem(b));
+  sv.classList.toggle("ready",o.phase==="ready");sv.disabled=o.phase!=="ready";
+}
+function mistake(el,msg){
+  G.mistakes++;G.order.mist++;G.combo=0;G.score=Math.max(0,G.score-10);sfx.buzz();
+  if(el){el.classList.remove("shake");void el.offsetWidth;el.classList.add("shake")}
+  toast(msg,false);renderHUD();
+}
+function toast(msg,ok){const t=$("#toast");if(!t)return;t.textContent=msg;t.className="toast show"+(ok?" ok":"");clearTimeout(toastTimer);toastTimer=setTimeout(()=>{const n=$("#toast");if(n)n.className="toast"},1100)}
+function pickBase(el){
+  const o=G.order,b=el.dataset.b;G.taps++;
+  if(b!==o.d.base)return mistake(el,L().msg.wrongBase);
+  sfx.tap();
+  const wait=BASES[b].wait;
+  if(wait){o.phase="cooking";renderStage();renderTray();renderTicket();const ref=o;setTimeout(()=>{if(G&&G.order===ref){afterBase();}},wait*1000)}
+  else afterBase();
+}
+function afterBase(){const o=G.order;o.phase=o.d.items.length?"items":"ready";if(o.phase==="ready")sfx.tap();renderStage();renderTray();renderTicket()}
+function pickItem(el){
+  const o=G.order,d=o.d,i=el.dataset.i;if(o.added.includes(i))return;G.taps++;
+  if(!d.items.includes(i))return mistake(el,i==="egg"?L().msg.noEgg:L().msg.wrong);
+  if(d.ordered&&d.items[o.added.length]!==i)return mistake(el,L().msg.order);
+  sfx.tap();o.added.push(i);
+  if(o.added.length===d.items.length)o.phase="ready";
+  renderStage();renderTray();renderTicket();
+}
+function serve(){
+  const o=G.order;if(!o||o.phase!=="ready")return;
+  const perfect=o.mist===0&&!o.hint;
+  if(perfect)G.combo++;
+  const pts=100+Math.round(o.tl*8)+(perfect?20*Math.min(G.combo,5):0);
+  G.score+=pts;G.served++;G.revenue+=o.d.price;G.best=Math.max(G.best,G.combo);
+  sfx.ding();
+  const f=document.createElement("div");f.className="float";f.textContent="+"+pts;$("#stage").appendChild(f);
+  toast(perfect?L().msg.perfect:L().msg.ok,true);
+  renderHUD();G.order=null;
+  setTimeout(()=>{if(G&&G.t>0)newOrder()},450);
+}
+function renderHUD(){
+  $("#hs").textContent=G.score.toLocaleString();$("#hr").textContent="$"+G.revenue.toLocaleString();
+  $("#hcombo").textContent=G.combo>=2?L().combo+G.combo:"";
+}
+function updateOrderBar(){const o=G&&G.order,b=$("#tbar");if(!o||!b)return;const p=Math.max(0,o.tl/o.tmax);b.firstElementChild.style.width=(p*100)+"%";b.classList.toggle("warn",p<.3)}
+function loop(now){
+  const dt=Math.min(.1,(now-last)/1000);last=now;
+  if(!G)return;
+  G.t-=dt;
+  const sec=Math.max(0,Math.ceil(G.t));$("#ht").textContent=sec;$("#hc").classList.toggle("low",G.t<=10);$("#htb").style.width=Math.max(0,G.t/GAME_LEN*100)+"%";
+  if(G.order){G.order.tl-=dt;updateOrderBar();
+    if(G.order.tl<=0){G.missed++;G.combo=0;sfx.buzz();toast(L().msg.late,false);renderHUD();G.order=null;setTimeout(()=>{if(G&&G.t>0)newOrder()},700)}}
+  if(G.t<=0)return endGame();
+  raf=requestAnimationFrame(loop);
+}
+function endGame(){
+  cancelAnimationFrame(raf);sfx.end();
+  const s=G.score,rank=s>=1800?3:s>=1000?2:s>=400?1:0;
+  const prev=+store.get("jjs-best")||0,isBest=s>prev&&s>0;if(isBest)store.set("jjs-best",String(s));
+  const acc=G.taps?Math.round((G.taps-G.mistakes)/G.taps*100):0;
+  const star=on=>`<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z" fill="${on?"#c39638":"none"}" stroke="${on?"#c39638":"#bcc6d5"}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
+  app.innerHTML=`<div class="screen result">
+   <div class="brandline"><b>|</b>${L().brand}<b>|</b></div>
+   <div class="stars">${[1,2,3].map(i=>star(rank>=i)).join("")}</div>
+   <p class="rank">${L().ranks[rank]}</p>
+   <div class="bigscore">${s.toLocaleString()}</div>
+   ${isBest?`<div class="newbest">${L().newBest}</div>`:""}
+   <div class="stats"><div><b>${G.served}</b><span>${L().served}</span></div><div><b>${G.missed}</b><span>${L().missed}</span></div><div><b>${acc}%</b><span>${L().acc}</span></div></div>
+   <p class="receipt">${L().receipt(G.served,G.revenue)}</p>
+   <button class="primary" id="again">${L().again}</button>
+   <button class="seg" id="home" style="margin:0 auto;padding:6px 18px;color:var(--brand);font-size:13px">${L().home}</button>
+  </div>`;
+  G=null;
+  $("#again").onclick=startGame;$("#home").onclick=startScreen;
+}
+startScreen();
+})();
+</script>
