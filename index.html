@@ -139,6 +139,14 @@ button:focus-visible,.tile:focus-visible,input:focus-visible{outline:3px solid v
 .rank div{display:grid;grid-template-columns:28px 24px 1fr auto;gap:8px;align-items:center;background:#1d2747;padding:6px 10px;font-variant-numeric:tabular-nums}
 .rank img{width:22px;image-rendering:pixelated}
 .rank div:first-child{box-shadow:0 0 0 2px var(--sun)}
+.rules{display:flex;flex-direction:column;gap:6px}
+.rules details{background:#1d2747;box-shadow:0 0 0 2px var(--ink)}
+.rules summary{cursor:pointer;padding:9px 12px;list-style:none;display:flex;justify-content:space-between;gap:10px;color:var(--paper)}
+.rules summary::-webkit-details-marker{display:none}
+.rules summary::after{content:'+';color:var(--sun)}
+.rules details[open] summary::after{content:'−'}
+.rules details[open] summary{color:var(--sun)}
+.rules p{margin:0;padding:0 12px 12px;font-size:13.5px;line-height:1.7;color:var(--paper)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 
@@ -147,13 +155,13 @@ button:focus-visible,.tile:focus-visible,input:focus-visible{outline:3px solid v
   <div class="players" id="players"></div>
   <div class="panel"><h2 id="logTitle"></h2><ul class="log" id="log"></ul></div>
   <div class="panel"><div class="legend" id="legend"></div></div>
-  <div class="bar"><span id="roundInfo"></span><div class="act"><button class="btn alt sm" id="langBtn"></button><button class="btn alt sm" id="newGame"></button></div></div>
+  <div class="bar"><span id="roundInfo"></span><div class="act"><button class="btn alt sm" id="rulesBtn"></button><button class="btn alt sm" id="langBtn"></button><button class="btn alt sm" id="newGame"></button></div></div>
 </div>
 <div id="overlay"></div>
 
 <script>
 /* ===== Menu data (game price = menu price) ===== */
-const GO_BONUS=100, START_MONEY=1000, JAIL_FEE=50, LV_MULT=[1,3,6,10];
+const BUY_MULT=6, GO_BONUS=500, START_MONEY=5000, JAIL_FEE=250, LV_MULT=[1,3,6,10];
 const GROUPS=[
   {c:'#9ad66f',zh:'小菜',en:'Sides'},
   {c:'#3aa76d',zh:'小菜',en:'Sides'},
@@ -195,28 +203,29 @@ const TILES=[
   P(7,290,'黑豉椒香墨魚麵','Squid Ink Noodles with Black Bean & Chili','墨魚麵','Squid Ink',{spicy:1,iz:'黑蒜頭｜青花椒｜老菜脯',ie:'Black Garlic | Green Sichuan Peppercorn | Aged Preserved Radish'}),
   P(7,380,'炙燒和牛臉頰拌麵','Seared Wagyu Beef Cheek Noodles','和牛拌麵','Wagyu',{spicy:1,iz:'酸白菜｜蕃茄｜牛油',ie:'Pickled Napa Cabbage | Tomato | Beef Tallow'}),
 ];
+TILES.forEach(x=>{if(x.t==='p')x.cost=x.price*BUY_MULT});
 const N_T=TILES.length, CORNERS=[0,7,14,21], JAIL=7;
 const COLORS=['#ef5b4c','#ffd23f','#3ec9a7','#e7a1d0'];
 
 const CHANCE=[
-  {zh:'客人大讚好吃，留下小費 $50',en:'A guest loved the noodles and left a $50 tip',fn:p=>{p.money+=50}},
-  {zh:'被美食帳號推薦，生意大好 +$100',en:'A food account recommended you. Collect $100',fn:p=>{p.money+=100}},
-  {zh:'外國客人加點一輪氣泡水，收入 $35',en:'Visitors order a round of sparkling water. Collect $35',fn:p=>{p.money+=35}},
-  {zh:'回到開店格，領 $100',en:'Go back to Open Shop and collect $100',mv:0},
+  {zh:'客人大讚好吃，留下小費 $250',en:'A guest loved the noodles and left a $250 tip',fn:p=>{p.money+=250}},
+  {zh:'被美食帳號推薦，生意大好 +$500',en:'A food account recommended you. Collect $500',fn:p=>{p.money+=500}},
+  {zh:'一桌外國客人點了 5 杯氣泡水，收入 $175',en:'A table of visitors orders 5 sparkling waters. Collect $175',fn:p=>{p.money+=175}},
+  {zh:`回到開店格，領 $${GO_BONUS}`,en:`Go back to Open Shop and collect $${GO_BONUS}`,mv:0},
   {zh:'今天想吃和牛，前往「炙燒和牛臉頰拌麵」',en:'Craving wagyu. Go to Seared Wagyu Beef Cheek Noodles',mv:27},
   {zh:'天氣變冷了，前往「干貝燉雞湯」',en:"It's getting cold. Go to Chicken Soup with Dried Scallops",mv:19},
   {zh:'走錯路，後退 3 格',en:'Wrong turn. Move back 3 spaces',back:3},
   {zh:'打翻一鍋湯，去洗碗區',en:'You spilled a pot of soup. Go to the Dish Pit',jail:true},
 ];
 const FATE=[
-  {zh:'冷氣壞了，修理費 $80',en:'The AC broke. Pay $80 for repairs',fn:p=>pay(p,80)},
-  {zh:'食材漲價，多付 $50',en:'Ingredient prices went up. Pay $50',fn:p=>pay(p,50)},
-  {zh:'繳店租 $100',en:'Rent is due. Pay $100',fn:p=>pay(p,100)},
-  {zh:'衛生稽查滿分，獎金 $80',en:'Perfect health inspection. Collect $80',fn:p=>{p.money+=80}},
-  {zh:'統一發票中獎 $100',en:'Your receipt won the lottery. Collect $100',fn:p=>{p.money+=100}},
-  {zh:'大家來捧場，每位玩家付你 $20',en:'Everyone comes to eat. Each player pays you $20',fn:p=>others(p).forEach(o=>pay(o,20,p))},
-  {zh:'請大家吃員工餐，付每位玩家 $20',en:'Staff meal on you. Pay each player $20',fn:p=>others(p).forEach(o=>pay(p,20,o))},
-  {zh:'店面整修，每顆人氣星付 $25',en:'Renovations: pay $25 per popularity star',fn:p=>{const n=ownedBy(pidOf(p)).reduce((a,i)=>a+(S.level[i]||0),0);pay(p,25*n)}},
+  {zh:'冷氣壞了，修理費 $400',en:'The AC broke. Pay $400 for repairs',fn:p=>pay(p,400)},
+  {zh:'食材漲價，多付 $250',en:'Ingredient prices went up. Pay $250',fn:p=>pay(p,250)},
+  {zh:'繳店租 $500',en:'Rent is due. Pay $500',fn:p=>pay(p,500)},
+  {zh:'衛生稽查滿分，獎金 $400',en:'Perfect health inspection. Collect $400',fn:p=>{p.money+=400}},
+  {zh:'統一發票中獎 $500',en:'Your receipt won the lottery. Collect $500',fn:p=>{p.money+=500}},
+  {zh:'大家來捧場，每位玩家付你 $100',en:'Everyone comes to eat. Each player pays you $100',fn:p=>others(p).forEach(o=>pay(o,100,p))},
+  {zh:'請大家吃員工餐，付每位玩家 $100',en:'Staff meal on you. Pay each player $100',fn:p=>others(p).forEach(o=>pay(p,100,o))},
+  {zh:'店面整修，每顆人氣星付 $100',en:'Renovations: pay $100 per popularity star',fn:p=>{const n=ownedBy(pidOf(p)).reduce((a,i)=>a+(S.level[i]||0),0);pay(p,100*n)}},
   {zh:'拿到一張「免洗碗券」',en:'You get a Skip-the-Dishes ticket',fn:p=>{p.card++}},
 ];
 
@@ -235,8 +244,8 @@ zh:{
   buyQ:(n,p)=>`要買下「${n}」嗎？ $${p}`,buy:'買下',skip:'不買',again:'雙數！再擲一次',end:'結束回合',result:'看結果',
   cpu:'電腦',human:'真人',washing:'洗碗中',ticket:n=>`券×${n}`,broke:'破產',
   logTitle:'店內廣播',round:(a,b)=>`第 ${a} / ${b} 輪`,roundInf:a=>`第 ${a} 輪 · 不限輪數`,newGame:'新遊戲',langBtn:'English',
-  tip:'集滿同色可提升人氣、收更多租金。格子價格就是菜單價格。',
-  price:'價格',priceNote:'菜單價格',baseRent:'基本租金',fullSet:'集滿同色',star:l=>`人氣 ${stars(l)}`,boostCost:'每次提升人氣',owner:'老闆',noOwner:'還沒人買',spicy:'🌶 辣',
+  tip:'格子上是買下價格；別人停下來要付的過路費就是這道菜的菜單價。集滿同色過路費加倍，還能提升人氣。',
+  price:'買下價格',baseRent:'過路費（菜單價）',menu:'菜單',fullSet:'集滿同色',star:l=>`人氣 ${stars(l)}`,boostCost:'每次提升人氣',owner:'老闆',noOwner:'還沒人買',spicy:'🌶 辣',
   boostBtn:c=>`提升人氣 $${c}`,maxed:'人氣已滿',needSet:'集滿同色才能提升人氣',noMoney:'錢不夠',close:'關閉',done:'完成',
   boostTitle:'提升店面人氣',boostNote:m=>`人氣越高，租金越高。現金 $${m}`,plain:'普通',rentNow:r=>`租 $${r}`,
   desc:{go:`每經過一次領 $${GO_BONUS}`,jail:`被派來洗碗時，要擲出雙數、付 $${JAIL_FEE} 或用免洗碗券才能離開。路過沒事。`,free:'吃一份主廚甜品，休息一下。',gojail:'直接去洗碗區，不經過開店格。',chance:'抽一張「今日特餐」卡，多半是好事。',fate:'抽一張「店務」卡，有好有壞。'},
@@ -244,6 +253,20 @@ zh:{
   winner:n=>`${n} 是拌麵大亨`,rankNote:'依總資產排名（現金＋店面＋人氣）',playAgain:'再玩一局',viewBoard:'看盤面',
   intro:'在久時拌麵的菜單上買下小菜、湯品、飲品和拌麵，集滿同色就能提升人氣、收更多租金。輪數到了，總資產最多的人獲勝。',
   players:'人數',rounds:'輪數',pplN:n=>`${n} 人`,rN:n=>`${n} 輪`,unlimited:'不限',start:'開始遊戲',resume:'繼續上一局',nameLabel:k=>`玩家 ${k} 名字`,
+  rulesBtn:'規則',rulesTitle:'遊戲規則',back:'返回設定',
+  rules:[
+    ['目標',`買下菜單上的菜當作你的店面，向停下來的玩家收過路費。輪數用完時，總資產（現金＋店面＋人氣）最多的人獲勝。如果其他人都破產，剩下的人直接獲勝。每人開始有 $${START_MONEY}。`],
+    ['輪到你的時候',`擲兩顆骰子，照點數沿著地圖往前走，再依停下的格子行動。每經過或停在「開店」格，領 $${GO_BONUS}。做完要做的事，按「結束回合」換下一位。`],
+    ['買下店面',`停在還沒人買的菜，可以用格子上的價格買下（菜單價的 ${BUY_MULT} 倍），也可以不買。不買的話格子會留著，下一個停到的人可以買。錢不夠就不能買。點任何格子都能看完整菜名和價格。`],
+    ['過路費',`停在別人的菜，要付給老闆過路費，金額就是那道菜的菜單價。例如停在別人的「炙燒和牛臉頰拌麵」，付 $380。停在自己的店不用付錢。`],
+    ['集滿同色',`同一個顏色的菜全部由你買下，這組菜的過路費變成兩倍。地圖下方的色塊說明列出每組顏色。`],
+    ['提升人氣',`集滿同色之後，在你的回合（擲骰前或走完後）可以按「提升人氣」，不用停在那一格。每道菜最多三顆星，每次花費是買下價格的一半。<br>★ 過路費 3 倍｜★★ 6 倍｜★★★ 10 倍`],
+    ['今日特餐和店務',`停在「今日特餐 ❓」或「店務 📋」要抽一張卡。今日特餐多半是好事，店務有好有壞。抽到「免洗碗券」可以留著，之後用來離開洗碗區。`],
+    ['洗碗區',`停在「去洗碗」、抽到打翻湯的卡，或連續三次擲出雙數，就直接去洗碗區，不經過開店格，也不領錢。<br>之後輪到你時，可以選：付 $${JAIL_FEE} 再照常擲骰、用免洗碗券、或擲骰子拚雙數。擲出雙數就照點數前進。試了三次都沒擲出雙數，要付 $${JAIL_FEE}，再照最後一次的點數前進。<br>在洗碗區時一樣可以收過路費。只是走到洗碗區（路過）沒有影響。`],
+    ['擲出雙數',`兩顆骰子點數一樣，走完之後可以再擲一次。連續三次雙數，要直接去洗碗區。`],
+    ['錢不夠的時候',`要付的錢比身上的現金多時，遊戲會自動先賣掉人氣星，再把店面賣回銀行，都是退回一半的錢。這樣還是不夠，就破產出局，所有店面回到銀行。`],
+    ['和台灣常見的大富翁不同的地方',`這個版本的規則接近國外的 Monopoly：<br>・要集滿同色才能提升人氣，不是停在自己的地就能蓋房子<br>・提升人氣可以在自己的回合隨時做，不用停在那一格<br>・過路費固定是菜單價，只會因為集滿同色和人氣變多<br>・有洗碗區（監獄），擲出雙數可以再擲一次<br>・沒有玩家之間的交易、抵押和拍賣`],
+  ],
   defNames:['玩家1','電腦 阿久','電腦 小筷','電腦 湯匙'],kind:{chance:'今日特餐',fate:'店務'},
   log:{
     start:m=>`開店囉！每人 $${m}`,passGo:p=>`${N(p)} 經過開店，領 $${GO_BONUS}`,
@@ -265,8 +288,8 @@ en:{
   buyQ:(n,p)=>`Buy ${n} for $${p}?`,buy:'Buy',skip:'Pass',again:'Doubles! Roll again',end:'End turn',result:'Results',
   cpu:'CPU',human:'Human',washing:'washing dishes',ticket:n=>`ticket×${n}`,broke:'bankrupt',
   logTitle:'SHOP NEWS',round:(a,b)=>`Round ${a} / ${b}`,roundInf:a=>`Round ${a} · no limit`,newGame:'New game',langBtn:'中文',
-  tip:'Own a full color set to boost popularity and raise rent. Prices match the real menu.',
-  price:'Price',priceNote:'menu price',baseRent:'Base rent',fullSet:'Full color set',star:l=>`Popularity ${stars(l)}`,boostCost:'Each boost',owner:'Owner',noOwner:'For sale',spicy:'🌶 Spicy',
+  tip:'Tiles show the price to buy. Rent is the dish\'s real menu price. A full color set doubles rent and unlocks popularity boosts.',
+  price:'Price to buy',baseRent:'Rent (menu price)',menu:'menu',fullSet:'Full color set',star:l=>`Popularity ${stars(l)}`,boostCost:'Each boost',owner:'Owner',noOwner:'For sale',spicy:'🌶 Spicy',
   boostBtn:c=>`Boost $${c}`,maxed:'Popularity is maxed',needSet:'Own the full color set to boost',noMoney:'Not enough cash',close:'Close',done:'Done',
   boostTitle:'Boost popularity',boostNote:m=>`More stars, higher rent. Cash $${m}`,plain:'No stars',rentNow:r=>`rent $${r}`,
   desc:{go:`Collect $${GO_BONUS} every time you pass.`,jail:`If you're sent here, roll doubles, pay $${JAIL_FEE}, or use a ticket to leave. Just passing is fine.`,free:"Enjoy the Chef's Dessert and take a break.",gojail:'Go straight to the Dish Pit. Do not pass Open Shop.',chance:'Draw a Daily Special card. Usually good news.',fate:'Draw a Shop Duty card. Could go either way.'},
@@ -274,6 +297,20 @@ en:{
   winner:n=>`${n} is the Noodle Tycoon`,rankNote:'Ranked by total assets (cash + shops + stars)',playAgain:'Play again',viewBoard:'View board',
   intro:"Buy sides, soups, drinks and noodles from the Josh's Noodles menu. Own a full color set to boost popularity and collect more rent. When the rounds run out, the richest player wins.",
   players:'Players',rounds:'Rounds',pplN:n=>`${n}`,rN:n=>`${n}`,unlimited:'No limit',start:'Start',resume:'Resume last game',nameLabel:k=>`Player ${k} name`,
+  rulesBtn:'Rules',rulesTitle:'How to play',back:'Back to setup',
+  rules:[
+    ['Goal',`Buy dishes from the menu as your shops and collect rent from players who land on them. When the rounds run out, the player with the most total assets (cash + shops + stars) wins. If everyone else goes bankrupt, the last player standing wins. Everyone starts with $${START_MONEY}.`],
+    ['Your turn',`Roll two dice, move that many spaces around the board, then act on the space you land on. Collect $${GO_BONUS} each time you pass or land on Open Shop. Tap End turn when you're done.`],
+    ['Buying',`Land on a dish nobody owns and you can buy it for the price on the tile (${BUY_MULT}× its menu price), or pass. If you pass, it stays for sale for the next player. You can't buy it without enough cash. Tap any tile to see the full dish name and prices.`],
+    ['Rent',`Land on someone else's dish and you pay the owner rent equal to that dish's menu price. For example, landing on someone's Seared Wagyu Beef Cheek Noodles costs $380. Your own shops are free.`],
+    ['Color sets',`Own every dish of one color and rent on that set doubles. The legend below the board lists each color group.`],
+    ['Popularity',`Once you own a full color set, you can tap Boost during your turn (before rolling or after moving). You don't need to be on that tile. Each dish holds up to three stars, and each boost costs half the price to buy.<br>★ rent ×3 | ★★ ×6 | ★★★ ×10`],
+    ['Daily Special and Shop Duty',`Land on Daily Special ❓ or Shop Duty 📋 to draw a card. Daily Specials are usually good news; Shop Duty can go either way. A Skip-the-Dishes ticket can be kept and used later to leave the Dish Pit.`],
+    ['Dish Pit',`Landing on Go Wash, drawing the spilled-soup card, or rolling doubles three times in a row sends you straight to the Dish Pit. You don't pass Open Shop or collect money.<br>On your next turns, choose to pay $${JAIL_FEE} and roll normally, use a ticket, or roll for doubles. Doubles move you out by that roll. After three failed tries, pay $${JAIL_FEE} and move by your last roll.<br>You still collect rent while in the Dish Pit. Simply walking past it has no effect.`],
+    ['Doubles',`If both dice match, take another roll after moving. Three doubles in a row sends you to the Dish Pit.`],
+    ['Running out of cash',`If you owe more than you have, the game sells your stars first, then sells your shops back to the bank, each for half price. If that's still not enough, you're bankrupt and out, and your shops return to the bank.`],
+    ['Different from other versions',`These rules follow classic Monopoly closely, with a few simplifications:<br>・You need a full color set before you can boost popularity<br>・You can boost any time on your turn, without landing on the tile<br>・Rent is the dish's menu price, raised only by color sets and stars<br>・There's a Dish Pit (jail), and doubles give you another roll<br>・No trading, mortgages or auctions`],
+  ],
   defNames:['Player 1','CPU Josh','CPU Chopsticks','CPU Spoon'],kind:{chance:'Daily Special',fate:'Shop Duty'},
   log:{
     start:m=>`Doors open! Everyone starts with $${m}`,passGo:p=>`${N(p)} passes Open Shop, collects $${GO_BONUS}`,
@@ -313,19 +350,19 @@ const others=p=>S.players.filter(o=>o!==p&&!o.out);
 const ownedBy=pid=>Object.keys(S.owner).map(Number).filter(i=>S.owner[i]===pid);
 const groupTiles=g=>TILES.map((x,i)=>x.t==='p'&&x.g===g?i:-1).filter(i=>i>=0);
 const ownsGroup=(pid,g)=>groupTiles(g).every(i=>S.owner[i]===pid);
-const baseRent=i=>Math.max(5,Math.round(TILES[i].price*0.15/5)*5);
-const upCost=i=>Math.round(TILES[i].price/2/10)*10;
+const baseRent=i=>TILES[i].price;
+const upCost=i=>Math.round(TILES[i].cost/2/10)*10;
 function rentOf(i){
   const x=TILES[i],o=S.owner[i],lv=S.level[i]||0,b=baseRent(i);
   if(lv>0)return b*LV_MULT[lv];
   return ownsGroup(o,x.g)?b*2:b;
 }
-const assets=pid=>{const p=S.players[pid];return p.money+ownedBy(pid).reduce((a,i)=>a+TILES[i].price+(S.level[i]||0)*upCost(i),0)};
+const assets=pid=>{const p=S.players[pid];return p.money+ownedBy(pid).reduce((a,i)=>a+TILES[i].cost+(S.level[i]||0)*upCost(i),0)};
 const canUpgrade=(pid,i)=>{const x=TILES[i];return x.t==='p'&&S.owner[i]===pid&&ownsGroup(pid,x.g)&&(S.level[i]||0)<3&&S.players[pid].money>=upCost(i)};
 const upgradable=pid=>ownedBy(pid).filter(i=>canUpgrade(pid,i));
 function log(...e){S.log.unshift(e);if(S.log.length>60)S.log.pop()}
-function save(){try{if(S&&S.phase!=='over'&&!S.demo)localStorage.setItem('jiushi-monopoly-v2',JSON.stringify(S));else if(S&&S.phase==='over')localStorage.removeItem('jiushi-monopoly-v2')}catch(e){}}
-function loadSaved(){try{const s=localStorage.getItem('jiushi-monopoly-v2');return s?JSON.parse(s):null}catch(e){return null}}
+function save(){try{if(S&&S.phase!=='over'&&!S.demo)localStorage.setItem('jiushi-monopoly-v3',JSON.stringify(S));else if(S&&S.phase==='over')localStorage.removeItem('jiushi-monopoly-v3')}catch(e){}}
+function loadSaved(){try{const s=localStorage.getItem('jiushi-monopoly-v3');return s?JSON.parse(s):null}catch(e){return null}}
 
 /* ===== Board ===== */
 function cell(i){
@@ -343,7 +380,7 @@ function buildBoard(){
     d.id='t'+i;d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label',LANG==='zh'?(x.zh||x.sz):(x.en||x.se));
     const name=TN(i);
     let h;
-    if(x.t==='p')h=`<div class="band" style="background:${GROUPS[x.g].c}"></div><div class="nm">${name}</div><div class="pr">$${x.price}</div>`;
+    if(x.t==='p')h=`<div class="band" style="background:${GROUPS[x.g].c}"></div><div class="nm">${name}</div><div class="pr">$${x.cost}</div>`;
     else if(CORNERS.includes(i))h=`<div class="ic">${x.ic}</div><div class="nm">${name}</div><div class="pr">${t('cornerSub')[x.t]}</div>`;
     else h=`<div class="ic">${x.ic}</div><div class="nm">${name}</div>`;
     d.innerHTML=h+'<div class="lv"></div><div class="toks"></div><div class="own"></div>';
@@ -352,8 +389,8 @@ function buildBoard(){
     b.appendChild(d);
   });
   const c=document.createElement('div');c.className='center';c.id='center';b.appendChild(c);
-  $('#legend').innerHTML=GROUPS.map((g,k)=>{const ps=groupTiles(k).map(i=>TILES[i].price);return `<span><i style="background:${g.c}"></i>${g[LANG]} $${Math.min(...ps)}–${Math.max(...ps)}</span>`}).join('')+`<span class="tip">${t('tip')}</span>`;
-  $('#logTitle').textContent=t('logTitle');$('#langBtn').textContent=t('langBtn');$('#newGame').textContent=t('newGame');
+  $('#legend').innerHTML=GROUPS.map((g,k)=>{const ps=groupTiles(k).map(i=>TILES[i].price);return `<span><i style="background:${g.c}"></i>${g[LANG]} · ${t('menu')} $${Math.min(...ps)}–${Math.max(...ps)}</span>`}).join('')+`<span class="tip">${t('tip')}</span>`;
+  $('#logTitle').textContent=t('logTitle');$('#langBtn').textContent=t('langBtn');$('#rulesBtn').textContent=t('rulesBtn');$('#newGame').textContent=t('newGame');
   document.documentElement.lang=LANG==='zh'?'zh-Hant':'en';
 }
 
@@ -395,7 +432,7 @@ function renderCenter(rolling){
   }
   else if(S.phase==='buy'){
     const i=p.pos;
-    ctrl=`<span class="q">${t('buyQ')(TN(i),TILES[i].price)}</span>
+    ctrl=`<span class="q">${t('buyQ')(TN(i),TILES[i].cost)}</span>
     <button class="btn" onclick="buy()">${t('buy')}</button><button class="btn alt" onclick="openTile(${i})">?</button><button class="btn alt" onclick="skipBuy()">${t('skip')}</button>`;
   }
   else if(S.phase==='post'){
@@ -418,7 +455,7 @@ function pay(p,amt,to){p.money-=amt;if(to)to.money+=amt;if(p.money<0)liquidate(p
 function liquidate(p){
   const pid=pidOf(p),mine=ownedBy(pid).sort((a,b)=>TILES[b].price-TILES[a].price);
   for(const i of mine)while((S.level[i]||0)>0&&p.money<0){S.level[i]--;p.money+=upCost(i)/2;log('sellUp',pid,i)}
-  for(const i of mine)if(p.money<0){delete S.owner[i];S.level[i]=0;p.money+=TILES[i].price/2;log('sellBack',pid,i)}
+  for(const i of mine)if(p.money<0){delete S.owner[i];S.level[i]=0;p.money+=TILES[i].cost/2;log('sellBack',pid,i)}
   if(p.money<0){p.out=true;p.money=0;ownedBy(pid).forEach(i=>{delete S.owner[i];S.level[i]=0});log('broke',pid)}
 }
 
@@ -453,7 +490,7 @@ async function land(p){
   const i=p.pos,x=TILES[i],pid=pidOf(p);
   if(x.t==='p'){
     const o=S.owner[i];
-    if(o===undefined){if(p.money>=x.price){S.phase='buy';return}log('noCash',pid,i)}
+    if(o===undefined){if(p.money>=x.cost){S.phase='buy';return}log('noCash',pid,i)}
     else if(o!==pid){if(!S.players[o].out){const r=rentOf(i);log('rent',pid,i,o,r);pay(p,r,S.players[o])}}
     else log('own',pid,i);
   }
@@ -495,7 +532,7 @@ function jailCard(){const p=cur();if(!p.card)return;p.card--;p.jail=0;log('jailC
 function buy(){
   if(S.phase!=='buy')return;
   const p=cur(),i=p.pos,x=TILES[i];
-  pay(p,x.price);S.owner[i]=S.turn;log('bought',S.turn,i);
+  pay(p,x.cost);S.owner[i]=S.turn;log('bought',S.turn,i);
   if(ownsGroup(S.turn,x.g))log('fullSet',S.turn);
   S.phase='post';closeSheet();render();
 }
@@ -531,10 +568,10 @@ function scheduleCpu(){
 }
 function cpuAct(){
   const p=cur();if(!p.cpu)return;
-  if(S.phase==='roll'){if(p.jail){if(p.card)return jailCard();if(p.money>350)return jailPay();return jailRoll()}return doRoll()}
-  if(S.phase==='buy')return p.money-TILES[p.pos].price>=150?buy():skipBuy();
+  if(S.phase==='roll'){if(p.jail){if(p.card)return jailCard();if(p.money>2000)return jailPay();return jailRoll()}return doRoll()}
+  if(S.phase==='buy')return p.money-TILES[p.pos].cost>=900?buy():skipBuy();
   if(S.phase==='post'){
-    const up=upgradable(S.turn).sort((a,b)=>TILES[b].price-TILES[a].price).find(i=>p.money-upCost(i)>=250);
+    const up=upgradable(S.turn).sort((a,b)=>TILES[b].price-TILES[a].price).find(i=>p.money-upCost(i)>=1500);
     if(up!==undefined)return upgrade(up);
     return S.again?reroll():endTurn();
   }
@@ -554,7 +591,7 @@ function openTile(i){
       <p class="sub">${second}${x.spicy?` <span class="chili">${t('spicy')}</span>`:''}</p>
       ${x.iz?`<p class="ing"><span>${LANG==='zh'?x.iz:x.ie}</span><span>${LANG==='zh'?x.ie:x.iz}</span></p>`:''}
       <div class="rows">
-        <span>${t('price')}</span><span>$${x.price} <span class="note">(${t('priceNote')})</span></span>
+        <span>${t('price')}</span><span>$${x.cost}</span>
         <span class="${o!==undefined&&!full&&!lv?'cur':''}">${t('baseRent')}</span><span>$${b}</span>
         <span class="${full&&!lv?'cur':''}">${t('fullSet')}</span><span>$${b*2}</span>
         ${[1,2,3].map(l=>`<span class="${lv===l?'cur':''}">${t('star')(l)}</span><span>$${b*LV_MULT[l]}</span>`).join('')}
@@ -565,7 +602,7 @@ function openTile(i){
         h+=canUpgrade(S.turn,i)?`<div class="act"><button class="btn" onclick="upgrade(${i});openTile(${i})">${t('boostBtn')(upCost(i))}</button></div>`
           :`<p class="note">${lv>=3?t('maxed'):!ownsGroup(S.turn,x.g)?t('needSet'):t('noMoney')}</p>`;
       }
-      if(S.phase==='buy'&&cur().pos===i&&!cur().cpu)h+=`<div class="act"><button class="btn" onclick="buy()">${t('buy')} $${x.price}</button><button class="btn alt" onclick="skipBuy()">${t('skip')}</button></div>`;
+      if(S.phase==='buy'&&cur().pos===i&&!cur().cpu)h+=`<div class="act"><button class="btn" onclick="buy()">${t('buy')} $${x.cost}</button><button class="btn alt" onclick="skipBuy()">${t('skip')}</button></div>`;
     }else{
       h=`<h3>${x.ic} ${TN(i)}</h3><p class="sub">${LANG==='zh'?x.se:x.sz}</p><p class="note" style="font-size:14px">${t('desc')[x.t]}</p>`;
     }
@@ -587,6 +624,12 @@ function showOver(){
   <div class="act"><button class="btn" onclick="openSetup()">${t('playAgain')}</button><button class="btn alt" onclick="closeSheet()">${t('viewBoard')}</button></div>`},true);
 }
 
+function openRules(fromSetup){
+  sheet(()=>`<h3>📖 ${t('rulesTitle')}</h3>
+    <div class="rules">${t('rules').map(([h,b],k)=>`<details${k===0?' open':''}><summary>${h}</summary><p>${b}</p></details>`).join('')}</div>
+    <div class="act">${fromSetup?`<button class="btn" onclick="openSetup()">${t('back')}</button>`:''}<button class="btn alt" onclick="closeSheet()">${t('close')}</button></div>`,true);
+}
+
 /* ===== Setup ===== */
 const setup={count:3,rounds:15,players:[{name:null,cpu:false},{name:null,cpu:true},{name:null,cpu:true},{name:null,cpu:true}]};
 const setupName=k=>setup.players[k].name??t('defNames')[k];
@@ -600,7 +643,7 @@ function openSetup(){
         <input id="pn${k}" value="${esc(setupName(k))}" maxlength="12" aria-label="${t('nameLabel')(k+1)}" oninput="setup.players[${k}].name=this.value">
         <div class="seg"><button aria-pressed="${!p.cpu}" onclick="setup.players[${k}].cpu=false;openSetup()">${t('human')}</button><button aria-pressed="${p.cpu}" onclick="setup.players[${k}].cpu=true;openSetup()">${t('cpu')}</button></div>
       </div>`).join('');
-    return `<div class="setup-head"><h3>${t('logo')}</h3><button class="btn alt sm" onclick="toggleLang()">${t('langBtn')}</button></div>
+    return `<div class="setup-head"><h3>${t('logo')}</h3><div class="act"><button class="btn alt sm" onclick="openRules(true)">${t('rulesBtn')}</button><button class="btn alt sm" onclick="toggleLang()">${t('langBtn')}</button></div></div>
       <p class="note" style="font-size:13px">${t('intro')}</p>
       <div class="field"><span>${t('players')}</span><div class="seg">${segP}</div></div>
       ${rows}
@@ -626,6 +669,7 @@ function toggleLang(){
 /* ===== Boot ===== */
 $('#newGame').onclick=openSetup;
 $('#langBtn').onclick=toggleLang;
+$('#rulesBtn').onclick=()=>openRules(false);
 function boot(d){
   buildBoard();
   if(d&&d.S&&d.S.players){S=d.S;if(S.phase==='busy')S.phase='post';render();return}
