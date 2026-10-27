@@ -1,529 +1,640 @@
-<title>拌麵出餐挑戰</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>久時大富翁</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap">
 <style>
-/* Layout: one phone screen. Order slip on top, plating stage in the middle, ingredient tray at thumb reach. Single paper-and-ink look taken from the 久時 menu. */
+/* Layout: 8x8 pixel board, perimeter = 28 tiles (20 real menu items), center = control panel; players + log stacked below. Single deliberate night-arcade look in the shop's navy. */
 :root{
-  --paper:#f1f2ee; --paper-2:#e6e9e4; --card:#fbfbf8;
-  --ink:#23314a; --ink-soft:#5d6b82;
-  --brand:#405880; --brand-deep:#2f4466; --brand-soft:#d3dbe8; --line:#bcc6d5;
-  --bad:#b4523c; --good:#4d7a52; --gold:#c39638;
-  --f-display:"Noto Serif TC","Songti TC","PMingLiU",serif;
-  --f-ui:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
-  color-scheme:light;
+  --night:#141c33;
+  --navy:#405880;
+  --paper:#eef1f6;
+  --paper-2:#dfe5ef;
+  --ink:#0d1222;
+  --sun:#ffd23f;
+  --tomato:#ef5b4c;
+  --muted:#9fb0cc;
+  --px:"DotGothic16","PingFang TC","Noto Sans TC","Microsoft JhengHei",monospace;
+  color-scheme:dark;
 }
-html,body{height:100%}
-body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;overflow:hidden}
-body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.5;
-  background:radial-gradient(circle at 20% 10%,rgba(64,88,128,.06),transparent 40%),radial-gradient(circle at 90% 80%,rgba(64,88,128,.07),transparent 45%)}
-.app{position:relative;height:100%;max-width:460px;margin:0 auto;display:flex;flex-direction:column;
-  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;box-sizing:border-box;gap:8px}
-button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
-button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
-.screen{display:flex;flex-direction:column;flex:1;min-height:0;gap:8px}
+*{box-sizing:border-box}
+html,body{background:var(--night);color:var(--paper)}
+body{font-family:var(--px);font-size:14px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 32px;
+  -webkit-tap-highlight-color:transparent;
+  background-image:linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px);
+  background-size:8px 8px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+button{font-family:var(--px);cursor:pointer}
+button:focus-visible,.tile:focus-visible,input:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 
-/* ---------- start ---------- */
-.brandline{font-family:var(--f-display);color:var(--brand);letter-spacing:.5em;font-size:13px;text-align:center;margin-top:6px}
-.brandline b{font-weight:500;color:var(--line);letter-spacing:0;margin:0 .4em}
-.hero{display:flex;justify-content:center}
-.hero svg{width:min(58vw,240px,34vh);height:auto}
-h1{font-family:var(--f-display);font-weight:900;font-size:clamp(30px,9vw,40px);text-align:center;margin:0;letter-spacing:.12em;color:var(--brand-deep);text-wrap:balance}
-.sub{text-align:center;color:var(--ink-soft);margin:0;font-size:14px;line-height:1.6}
-.how{list-style:none;padding:0;margin:4px auto 0;display:grid;gap:6px;font-size:13.5px;max-width:330px;width:100%}
-.how li{display:grid;grid-template-columns:26px 1fr;align-items:center;gap:8px;color:var(--ink)}
-.how span{width:26px;height:26px;border-radius:50%;border:1.5px solid var(--brand);color:var(--brand);display:grid;place-items:center;font-family:var(--f-display);font-weight:700;font-size:13px}
-.toggles{display:flex;justify-content:center;gap:10px;margin-top:4px}
-.seg{display:flex;border:1.5px solid var(--brand);border-radius:999px;overflow:hidden}
-.seg button{padding:6px 14px;font-size:13px;color:var(--brand)}
-.seg button[aria-pressed="true"]{background:var(--brand);color:#fff}
-.primary{margin:8px auto 0;background:var(--brand);color:#fff;font-family:var(--f-display);font-weight:700;font-size:20px;letter-spacing:.3em;padding:14px 0;width:min(100%,320px);border-radius:12px;box-shadow:0 4px 0 var(--brand-deep)}
-.primary:active{transform:translateY(3px);box-shadow:0 1px 0 var(--brand-deep)}
-.best{text-align:center;font-size:12.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums}
-.spacer{flex:1}
+.btn{border:0;background:var(--sun);color:var(--ink);font-size:14px;padding:7px 12px;line-height:1.3;
+  box-shadow:0 0 0 2px var(--ink),3px 3px 0 2px var(--ink)}
+.btn:active{transform:translate(3px,3px);box-shadow:0 0 0 2px var(--ink)}
+.btn.alt{background:var(--paper)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{font-size:13px;padding:5px 10px}
 
-/* ---------- HUD ---------- */
-.hud{display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:8px;font-variant-numeric:tabular-nums}
-.hud .lbl{font-size:10.5px;letter-spacing:.15em;color:var(--ink-soft)}
-.hud .val{font-family:var(--f-display);font-weight:700;font-size:20px;color:var(--brand-deep);line-height:1.1}
-.hud .r{text-align:right}
-.clock{text-align:center}
-.clock .val{font-size:26px}
-.clock.low .val{color:var(--bad)}
-.timebar{height:4px;background:var(--paper-2);border-radius:4px;overflow:hidden}
-.timebar i{display:block;height:100%;background:var(--brand);transform-origin:left;width:100%}
-.combo{font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.05em;min-height:14px}
+/* board */
+.board{position:relative;width:100%;aspect-ratio:1;display:grid;grid-template-columns:repeat(8,1fr);grid-template-rows:repeat(8,1fr);
+  gap:2px;padding:2px;background:var(--ink);box-shadow:0 0 0 3px var(--navy),6px 6px 0 3px #070a14}
+.tile{position:relative;background:var(--paper);color:var(--ink);display:flex;flex-direction:column;align-items:center;overflow:hidden;
+  font-size:clamp(7.5px,2.1vw,12px);line-height:1.12;cursor:pointer;min-width:0;text-align:center}
+.tile .band{width:100%;height:15%;flex:none}
+.tile .nm{padding:1px 1px 0;white-space:nowrap;letter-spacing:-.03em}
+.tile.en .nm{white-space:normal;font-size:.86em;line-height:1.02;letter-spacing:-.04em;overflow-wrap:anywhere}
+.tile .pr{margin-top:auto;margin-bottom:6px;font-size:.9em;color:#4a5878;font-variant-numeric:tabular-nums}
+.tile.corner{background:var(--paper-2);justify-content:center}
+.tile.corner .pr{margin:0}
+.tile.special{background:#f7ecc9;justify-content:center}
+.tile .ic{font-size:1.45em;line-height:1.1}
+.tile .own{position:absolute;left:0;right:0;bottom:0;height:5px}
+.tile.owned{background:color-mix(in srgb,var(--oc) 42%,var(--paper));box-shadow:inset 0 0 0 3px var(--oc)}
+.tile.owned .own{height:8px;background:var(--oc);box-shadow:0 -2px 0 var(--ink)}
+.tile.owned .pr{color:var(--ink)}
+.tile .lv{position:absolute;right:2px;top:18%;display:flex;flex-direction:column;gap:1px}
+.tile .lv i{width:5px;height:5px;background:var(--ink);display:block}
+.tile .toks{position:absolute;left:1px;right:1px;top:36%;display:flex;flex-wrap:wrap;justify-content:center;gap:1px;pointer-events:none}
+.tile .toks img{width:clamp(12px,3.3vw,20px);image-rendering:pixelated;filter:drop-shadow(1px 1px 0 var(--ink))}
+.tile.hot{animation:blink .5s steps(2) 3}
+@keyframes blink{50%{background:var(--sun)}}
 
-/* ---------- ticket ---------- */
-.ticket{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:8px 12px 10px;position:relative;box-shadow:0 2px 0 rgba(35,49,74,.06)}
-.ticket::before,.ticket::after{content:"";position:absolute;left:10px;right:10px;height:6px;background:radial-gradient(circle at 4px 0,transparent 3px,var(--card) 3.5px) repeat-x;background-size:8px 6px}
-.ticket::before{top:-6px;transform:scaleY(-1)}
-.ticket::after{bottom:-6px}
-.t-top{display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink-soft);letter-spacing:.08em;font-variant-numeric:tabular-nums}
-.t-name{font-family:var(--f-display);font-weight:700;font-size:clamp(17px,5vw,20px);margin:2px 0 6px;color:var(--ink);line-height:1.3}
-.t-name small{font-family:var(--f-ui);font-weight:500;font-size:11px;color:var(--bad);border:1px solid var(--bad);border-radius:3px;padding:0 4px;margin-left:6px;vertical-align:3px;letter-spacing:.05em}
-.chips{display:flex;flex-wrap:wrap;gap:4px;min-height:22px}
-.chip{font-size:11.5px;padding:2px 7px;border-radius:999px;border:1px dashed var(--line);color:var(--ink-soft);line-height:1.4}
-.chip.done{border-style:solid;border-color:var(--good);color:var(--good);background:rgba(77,122,82,.08)}
-.chip.done::before{content:"✓ "}
-.chip.base{border-color:var(--brand);color:var(--brand)}
-.chip.base.done{border-color:var(--good);color:var(--good)}
-.t-row{display:flex;align-items:center;gap:8px;margin-top:8px}
-.t-bar{flex:1;height:5px;border-radius:5px;background:var(--paper-2);overflow:hidden}
-.t-bar i{display:block;height:100%;background:var(--good);width:100%}
-.t-bar.warn i{background:var(--bad)}
-.hintbtn{font-size:11.5px;color:var(--brand);border:1px solid var(--brand);border-radius:999px;padding:2px 9px;white-space:nowrap}
-.hintbtn[disabled]{opacity:.35;cursor:default}
+.center{grid-row:2/8;grid-column:2/8;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:clamp(4px,1.6vw,12px);padding:6px;text-align:center;overflow:hidden;background:var(--night);
+  background-image:radial-gradient(rgba(90,118,166,.25) 1px,transparent 1px);background-size:6px 6px}
+.logo{font-size:clamp(18px,6vw,32px);letter-spacing:.06em;color:var(--sun);line-height:1;
+  text-shadow:2px 0 var(--ink),-2px 0 var(--ink),0 2px var(--ink),0 -2px var(--ink),3px 3px 0 var(--tomato)}
+.logo small{display:block;font-size:.36em;color:var(--muted);letter-spacing:.2em;text-shadow:none;margin-top:5px}
+.turn{display:flex;align-items:center;gap:6px;font-size:clamp(11px,3.2vw,15px)}
+.turn img{width:20px;image-rendering:pixelated}
+.dice{display:flex;gap:10px}
+.die{width:clamp(30px,9vw,46px);aspect-ratio:1;background:var(--paper);display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);padding:14%;
+  box-shadow:0 0 0 2px var(--ink),3px 3px 0 2px var(--ink)}
+.die i{background:var(--ink);margin:12%;visibility:hidden}
+.die i.on{visibility:visible}
+.die.roll{animation:shake .12s steps(2) infinite}
+@keyframes shake{50%{transform:translate(1px,-2px) rotate(6deg)}}
+.ctrl{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 10px;min-height:34px;align-items:center}
+.ctrl .q{width:100%;font-size:clamp(11px,3vw,14px)}
+.thinking{color:var(--muted);font-size:clamp(11px,3vw,14px)}
+.last{font-size:clamp(10px,2.7vw,13px);color:var(--muted);max-width:100%;min-height:2.6em;overflow:hidden}
+.last b{color:var(--paper);font-weight:normal}
 
-/* ---------- stage ---------- */
-.stage{flex:1;min-height:0;display:grid;place-items:center;position:relative}
-.stage svg{width:auto;height:100%;max-height:250px;max-width:100%}
-.cooking{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
-.cooking div{background:rgba(35,49,74,.82);color:#fff;border-radius:999px;padding:6px 14px;font-size:13px;display:flex;align-items:center;gap:8px}
-.cooking .ring{width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;animation:spin .7s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.toast{position:absolute;left:50%;top:6px;transform:translateX(-50%);background:var(--bad);color:#fff;font-size:13px;padding:5px 12px;border-radius:6px;white-space:nowrap;opacity:0;transition:opacity .15s;pointer-events:none;z-index:3}
-.toast.show{opacity:1}
-.toast.ok{background:var(--good)}
-.float{position:absolute;left:50%;top:40%;transform:translate(-50%,0);font-family:var(--f-display);font-weight:900;font-size:30px;color:var(--brand-deep);pointer-events:none;animation:rise .9s ease-out forwards;z-index:3;text-shadow:0 2px 0 var(--paper)}
-@keyframes rise{to{transform:translate(-50%,-60px);opacity:0}}
+.card{position:absolute;inset:12%;background:var(--paper);color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:10px;
+  box-shadow:0 0 0 3px var(--ink),5px 5px 0 3px var(--ink);animation:pop .25s steps(3)}
+.card .k{background:var(--tomato);color:#fff;padding:2px 8px;font-size:13px}
+.card.fate .k{background:var(--navy)}
+.card p{margin:0;font-size:clamp(12px,3.6vw,17px)}
+@keyframes pop{from{transform:scale(.4)}}
 
-/* ---------- tray ---------- */
-.trayhead{display:flex;justify-content:space-between;align-items:baseline}
-.step{font-family:var(--f-display);font-weight:700;color:var(--brand);font-size:14px;letter-spacing:.15em}
-.step b{color:var(--line);font-weight:500;letter-spacing:0;margin:0 .3em}
-.stepnote{font-size:11.5px;color:var(--ink-soft)}
-.tray{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:5px 3px 6px;display:flex;flex-direction:column;align-items:center;gap:2px;min-height:0;transition:transform .08s}
-.tile svg{width:clamp(34px,10vw,44px);height:auto}
-.tile span{font-size:clamp(10px,2.9vw,11.5px);line-height:1.25;text-align:center;color:var(--ink);word-break:break-all}
-.tile:active{transform:scale(.95)}
-.tile.used{opacity:.35}
-.tile[disabled]{opacity:.35;cursor:default}
-.tile.shake{animation:shake .32s;border-color:var(--bad)}
-@keyframes shake{25%{transform:translateX(-5px)}50%{transform:translateX(5px)}75%{transform:translateX(-3px)}}
-.serve{margin-top:4px;width:100%;padding:12px 0;border-radius:12px;font-family:var(--f-display);font-weight:900;font-size:19px;letter-spacing:.35em;background:var(--paper-2);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;gap:8px}
-.serve.ready{background:var(--brand);color:#fff;box-shadow:0 4px 0 var(--brand-deep);animation:pulse 1s infinite}
-.serve.ready:active{transform:translateY(3px);box-shadow:0 1px 0 var(--brand-deep)}
-@keyframes pulse{50%{filter:brightness(1.15)}}
+.players{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.pl{background:#1d2747;padding:8px 10px;display:grid;grid-template-columns:auto 1fr;gap:2px 8px;align-items:center;box-shadow:0 0 0 2px var(--ink);min-width:0}
+.pl img{width:26px;image-rendering:pixelated;grid-row:span 2}
+.pl .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.pl .m{font-variant-numeric:tabular-nums;color:var(--sun)}
+.pl .tag{font-size:11px;color:var(--muted)}
+.pl.now{box-shadow:0 0 0 2px var(--sun),4px 4px 0 2px var(--ink)}
+.pl.out{opacity:.4}
+.pl.out .m{text-decoration:line-through}
 
-/* ---------- result ---------- */
-.result{align-items:center;text-align:center;justify-content:center;gap:10px}
-.rank{font-family:var(--f-display);font-weight:900;font-size:clamp(30px,9vw,38px);color:var(--brand-deep);letter-spacing:.1em;margin:0}
-.stars{display:flex;gap:6px;justify-content:center}
-.stars svg{width:36px;height:36px}
-.bigscore{font-family:var(--f-display);font-weight:900;font-size:48px;color:var(--ink);font-variant-numeric:tabular-nums;line-height:1}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;width:100%;max-width:340px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 0}
-.stats div+div{border-left:1px dotted var(--line)}
-.stats b{display:block;font-family:var(--f-display);font-size:20px;font-variant-numeric:tabular-nums;color:var(--brand-deep)}
-.stats span{font-size:11px;color:var(--ink-soft);letter-spacing:.1em}
-.receipt{font-size:13px;color:var(--ink-soft);max-width:320px;line-height:1.6}
-.newbest{color:var(--gold);font-weight:700;font-size:13px;letter-spacing:.1em}
-@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.panel{background:#1d2747;box-shadow:0 0 0 2px var(--ink);padding:10px 12px}
+.panel h2{margin:0 0 6px;font-size:14px;font-weight:normal;color:var(--sun);letter-spacing:.1em}
+.log{max-height:180px;overflow-y:auto;margin:0;padding:0;list-style:none;font-size:13px;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+.log li:first-child{color:var(--paper)}
+.legend{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px 12px;font-size:12px;color:var(--muted)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;flex:none;box-shadow:0 0 0 1px var(--ink)}
+.legend .tip{grid-column:1/-1}
+.bar{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:12px;color:var(--muted);flex-wrap:wrap}
+.bar .act{display:flex;gap:10px}
+
+.veil{position:fixed;inset:0;background:rgba(8,11,22,.72);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.veil.mid{align-items:center}
+.sheet{width:min(100%,520px);max-height:88%;overflow-y:auto;background:var(--night);border-top:3px solid var(--sun);
+  padding:16px max(16px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));
+  display:flex;flex-direction:column;gap:12px}
+.veil.mid .sheet{border:0;box-shadow:0 0 0 3px var(--sun),6px 6px 0 3px var(--ink);margin:16px;width:min(calc(100% - 32px),460px)}
+.sheet h3{margin:0;font-size:20px;font-weight:normal;color:var(--sun);display:flex;align-items:center;gap:8px;line-height:1.3}
+.sheet h3 .sw{width:14px;height:14px;flex:none;box-shadow:0 0 0 2px var(--ink)}
+.sheet .sub{margin:-8px 0 0;color:var(--paper);font-size:14px}
+.sheet .ing{margin:0;color:var(--muted);font-size:13px}
+.sheet .ing span{display:block}
+.rows{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:14px}
+.rows span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums}
+.rows .cur{color:var(--sun)}
+.act{display:flex;flex-wrap:wrap;gap:10px}
+.note{font-size:12px;color:var(--muted);margin:0}
+.chili{color:var(--tomato);font-size:13px}
+.setup-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.setup-row{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center}
+.setup-row img{width:22px;image-rendering:pixelated}
+.setup-row input{font-family:var(--px);font-size:15px;background:var(--paper);color:var(--ink);border:0;padding:6px 8px;min-width:0;width:100%;box-shadow:0 0 0 2px var(--ink)}
+.seg{display:flex;box-shadow:0 0 0 2px var(--ink)}
+.seg button{border:0;background:#2a3660;color:var(--muted);padding:6px 9px;font-size:13px}
+.seg button[aria-pressed="true"]{background:var(--sun);color:var(--ink)}
+.field{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.up-list{display:flex;flex-direction:column;gap:8px}
+.up-item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#1d2747;padding:8px 10px}
+.rank{display:flex;flex-direction:column;gap:6px}
+.rank div{display:grid;grid-template-columns:28px 24px 1fr auto;gap:8px;align-items:center;background:#1d2747;padding:6px 10px;font-variant-numeric:tabular-nums}
+.rank img{width:22px;image-rendering:pixelated}
+.rank div:first-child{box-shadow:0 0 0 2px var(--sun)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
 </style>
 
-<div class="app" id="app"></div>
+<div class="wrap">
+  <div class="board" id="board"></div>
+  <div class="players" id="players"></div>
+  <div class="panel"><h2 id="logTitle"></h2><ul class="log" id="log"></ul></div>
+  <div class="panel"><div class="legend" id="legend"></div></div>
+  <div class="bar"><span id="roundInfo"></span><div class="act"><button class="btn alt sm" id="langBtn"></button><button class="btn alt sm" id="newGame"></button></div></div>
+</div>
+<div id="overlay"></div>
 
 <script>
-(function(){
-"use strict";
-/* ---------- helpers ---------- */
-const $=s=>document.querySelector(s);
-let uid=0;
-function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-function shade(hex,p){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.min(255,Math.round(p<0?v*(1+p):v+(255-v)*p)));return'#'+[n>>16,n>>8&255,n&255].map(v=>f(v).toString(16).padStart(2,'0')).join('')}
-function shuffle(a,r=Math.random){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
-const f1=v=>v.toFixed(1);
-function strands(r,o){
-  const {n,len,amp,freq,w,color,area,cx=0,cy=0,curl=0,steps=14}=o;const dark=o.dark||shade(color,-.32);
-  let under='',over='';
-  for(let i=0;i<n;i++){
-    const a=r()*Math.PI*2,d=Math.sqrt(r())*area;let x=cx+Math.cos(a)*d-len/2*Math.cos(a+1),y=cy+Math.sin(a)*d-len/2*Math.sin(a+1);let th=r()*Math.PI*2;
-    const pts=[[x,y]];
-    for(let s=1;s<=steps;s++){th+=curl*(r()-.5);x+=Math.cos(th)*len/steps;y+=Math.sin(th)*len/steps;const off=amp*Math.sin(freq*s+i*1.3);pts.push([x-Math.sin(th)*off,y+Math.cos(th)*off])}
-    const d2='M'+pts.map(p=>f1(p[0])+' '+f1(p[1])).join(' L');
-    under+=`<path d="${d2}" stroke="${dark}" stroke-width="${f1(w+1.6)}"/>`;over+=`<path d="${d2}" stroke="${color}" stroke-width="${f1(w)}"/>`;
-  }
-  return `<g fill="none" stroke-linecap="round" stroke-linejoin="round">${under}${over}</g>`;
-}
-function dots(r,n,area,cx,cy,fn){let s='';for(let i=0;i<n;i++){const a=r()*Math.PI*2,d=Math.sqrt(r())*area;s+=fn(cx+Math.cos(a)*d,cy+Math.sin(a)*d,r,i)}return s}
-
-/* ---------- i18n ---------- */
-const T={
- zh:{brand:"久時拌麵",title:"拌麵出餐挑戰",sub:"90 秒內照單出餐，做得越快越準，分數越高。",how:["看點單，認清是哪一道菜","選對麵體，或送進對的工作站","加上配料，按鈴出餐"],start:"開　始",best:"最高分",score:"分數",time:"時間",rev:"營業額",table:"桌",combo:"連續完美 ×",hint:"看做法 −30",step1n:"選麵體",step1o:"選工作站",step2:"加配料",step2d:"依序完成",stepReady:"可以出餐了",serve:"出　餐",newDish:"新菜",cooking:{wok:"大火快炒中",oven:"蒸烤箱回溫中",stove:"爐火加熱中"},
-  msg:{wrongBase:"不是這個喔",noEgg:"這碗沒有溏心蛋！",order:"順序不對喔",wrong:"這道菜不加這個",late:"客人等太久了…",perfect:"完美出餐！",ok:"出餐！"},
-  served:"出餐",missed:"錯過",acc:"準確率",again:"再玩一次",home:"回首頁",newBest:"新紀錄！",receipt:(n,r)=>`這局你一共出了 ${n} 道菜，替久時賺進 $${r.toLocaleString()}。`,sound:["音效 開","音效 關"],
-  ranks:["洗碗小幫手","實習廚師","二廚","主廚認證"]},
- en:{brand:"Josh's Noodles",title:"Noodle Rush",sub:"90 seconds to fill orders. The faster and cleaner you plate, the higher you score.",how:["Read the order ticket","Pick the right noodle, or the right station","Add the toppings and ring the bell"],start:"START",best:"Best",score:"Score",time:"Time",rev:"Sales",table:"Table",combo:"Perfect streak ×",hint:"Recipe −30",step1n:"Pick noodle",step1o:"Pick station",step2:"Add toppings",step2d:"In order",stepReady:"Ready to serve",serve:"SERVE",newDish:"NEW",cooking:{wok:"Stir-frying",oven:"Reheating in oven",stove:"Heating on stove"},
-  msg:{wrongBase:"Not that one",noEgg:"No egg in this bowl!",order:"Wrong order",wrong:"Not in this dish",late:"The guest waited too long…",perfect:"Perfect!",ok:"Served!"},
-  served:"Served",missed:"Missed",acc:"Accuracy",again:"Play again",home:"Home",newBest:"New best!",receipt:(n,r)=>`You served ${n} dishes and made $${r.toLocaleString()} for the shop.`,sound:["Sound on","Sound off"],
-  ranks:["Dish Helper","Trainee Cook","Sous Chef","Chef Approved"]}
-};
-
-/* ---------- icons (40×40) ---------- */
-const IC={
- egg:`<ellipse cx="20" cy="21" rx="16" ry="12.5" fill="#b9793e"/><ellipse cx="20" cy="21" rx="13" ry="9.8" fill="#f4e8cf"/><circle cx="20" cy="21" r="6.8" fill="#ee8020"/><circle cx="18" cy="19" r="2.2" fill="#ffc46a" opacity=".85"/>`,
- wagyu:`<path d="M5 15 Q20 6 35 12 L33 28 Q18 35 7 28Z" fill="#5b3022"/><path d="M10 16 L28 26 M15 13 L32 22 M8 22 L22 30" stroke="#33170f" stroke-width="2"/><path d="M8 15 Q20 9 33 13" stroke="#8a5038" stroke-width="1.5" fill="none"/>`,
- kailan:`<path d="M7 33 Q19 22 33 8" stroke="#567f32" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M14 26 Q6 14 16 8 Q26 6 24 18 Q22 26 14 26Z" fill="#2f5a22"/><path d="M24 17 Q34 18 34 28 Q26 32 22 24Z" fill="#3d6b2a"/><circle cx="15" cy="15" r="1.6" fill="#16200f"/><circle cx="20" cy="11" r="1.3" fill="#16200f"/><circle cx="29" cy="25" r="1.4" fill="#16200f"/>`,
- kongxin:`<g fill="none" stroke="#86c84a" stroke-width="3.2"><circle cx="13" cy="15" r="6"/><circle cx="26" cy="13" r="5.5"/><circle cx="19" cy="27" r="6"/><circle cx="31" cy="26" r="5"/></g><g fill="none" stroke="#5e9a2e" stroke-width="1"><circle cx="13" cy="15" r="4"/><circle cx="19" cy="27" r="4"/></g>`,
- squid:`<path d="M9 31 Q6 15 21 8 Q32 5 33 13 Q31 26 14 33Z" fill="#e8a083"/><path d="M14 26 L26 14 M12 21 L22 12 M18 29 L29 18" stroke="#8a4632" stroke-width="2"/><path d="M8 31 Q4 36 2 38 M10 32 Q8 37 7 39" stroke="#c97a60" stroke-width="2" fill="none"/>`,
- woodear:`<path d="M8 22 Q6 10 18 9 Q28 8 30 16 Q34 26 22 31 Q12 34 8 22Z" fill="#1d1816"/><path d="M14 18 Q20 14 25 19 Q22 25 16 24" stroke="#4d403b" stroke-width="2" fill="none"/><path d="M24 26 Q32 24 34 30 Q30 35 25 32Z" fill="#2b2320"/>`,
- chayote:`<g fill="none" stroke="#4e8a33" stroke-width="2.4" stroke-linecap="round"><path d="M5 34 Q14 20 22 16 Q30 12 35 5"/><path d="M14 22 Q10 15 14 11 Q18 9 17 14"/><path d="M24 15 Q28 22 33 21 Q36 18 33 16"/></g><path d="M18 18 Q12 26 20 28 Q26 24 18 18Z" fill="#3f7a2a"/>`,
- cordyceps:`<g fill="none" stroke="#ef7a2b" stroke-width="2.6" stroke-linecap="round"><path d="M6 32 Q14 18 12 6"/><path d="M12 34 Q22 20 20 8"/><path d="M19 34 Q28 24 30 10"/><path d="M26 35 Q34 26 35 16"/></g>`,
- sorghum:`<g fill="#8b3c22"><circle cx="13" cy="15" r="3.2"/><circle cx="21" cy="12" r="3"/><circle cx="27" cy="18" r="3.2"/><circle cx="17" cy="22" r="3.1"/><circle cx="24" cy="26" r="3"/><circle cx="12" cy="27" r="3"/><circle cx="30" cy="27" r="2.8"/></g><g fill="#c0603a"><circle cx="12" cy="14" r="1"/><circle cx="26" cy="17" r="1"/><circle cx="23" cy="25" r="1"/></g>`,
- karasumi:`<g fill="#f2a63a"><circle cx="12" cy="14" r="1.6"/><circle cx="18" cy="11" r="1.3"/><circle cx="25" cy="13" r="1.7"/><circle cx="30" cy="19" r="1.3"/><circle cx="15" cy="20" r="1.8"/><circle cx="22" cy="19" r="1.5"/><circle cx="28" cy="25" r="1.7"/><circle cx="11" cy="26" r="1.4"/><circle cx="19" cy="27" r="1.7"/><circle cx="24" cy="31" r="1.3"/><circle cx="16" cy="32" r="1.1"/></g><rect x="9" y="4" width="22" height="5" rx="2.5" fill="#d9822a"/>`,
- cauli:`<g fill="#efe2c4"><circle cx="13" cy="16" r="7"/><circle cx="22" cy="12" r="7"/><circle cx="28" cy="20" r="6.5"/><circle cx="18" cy="23" r="7"/></g><rect x="17" y="26" width="5" height="9" rx="2" fill="#e3d4ad"/><g fill="#5f4e3c"><circle cx="12" cy="14" r="1.3"/><circle cx="22" cy="10" r="1.2"/><circle cx="28" cy="19" r="1.4"/><circle cx="18" cy="22" r="1.1"/><circle cx="25" cy="15" r="1"/></g>`,
- chicken:`<g fill="none" stroke-linecap="round"><path d="M7 26 Q16 14 30 12" stroke="#d7bb98" stroke-width="5"/><path d="M8 30 Q20 22 33 22" stroke="#f1dec3" stroke-width="5"/><path d="M11 20 Q20 10 32 8" stroke="#ead2b2" stroke-width="4"/><path d="M12 33 Q22 30 31 30" stroke="#e5ccaa" stroke-width="4"/></g>`,
- garlicKoji:`<path d="M8 28 Q6 18 16 16 Q18 8 26 12 Q34 14 32 24 Q30 32 20 32 Q11 33 8 28Z" fill="#e6d8a8"/><path d="M14 20 Q20 16 26 19" stroke="#fff6d8" stroke-width="2" fill="none"/><g fill="#c9b47a"><circle cx="15" cy="26" r="1.2"/><circle cx="23" cy="25" r="1"/><circle cx="27" cy="20" r="1"/></g>`,
- barley:`<g fill="#f4ecd8" stroke="#c7b68c" stroke-width="1"><ellipse cx="13" cy="15" rx="4.2" ry="3.2"/><ellipse cx="22" cy="12" rx="4" ry="3"/><ellipse cx="28" cy="19" rx="4.2" ry="3.3"/><ellipse cx="17" cy="22" rx="4.4" ry="3.2"/><ellipse cx="25" cy="27" rx="4" ry="3"/><ellipse cx="12" cy="28" rx="3.8" ry="3"/></g><g fill="#6d5a40"><circle cx="13" cy="15" r=".9"/><circle cx="28" cy="19" r=".9"/><circle cx="17" cy="22" r=".9"/></g>`,
- chervil:`<path d="M20 36 L20 18" stroke="#4c8e36" stroke-width="1.8"/><g fill="#4d9a38"><path d="M20 18 Q10 16 9 8 Q16 6 20 14Z"/><path d="M20 18 Q30 16 31 8 Q24 6 20 14Z"/><path d="M20 16 Q17 6 20 2 Q23 6 20 16Z"/><path d="M20 24 Q10 24 7 18 Q14 16 20 22Z"/><path d="M20 24 Q30 24 33 18 Q26 16 20 22Z"/></g>`,
- duck:`<g fill="none" stroke-linecap="round"><path d="M8 27 Q18 16 31 13" stroke="#7d4a43" stroke-width="5"/><path d="M9 32 Q21 24 33 24" stroke="#9b6157" stroke-width="5"/><path d="M12 21 Q21 12 31 7" stroke="#b07a6c" stroke-width="3.5"/></g>`,
- arugula:`<path d="M10 34 Q18 22 28 6" stroke="#3f7f2e" stroke-width="1.8" fill="none"/><g fill="#4f9d3c"><path d="M28 6 Q36 12 30 20 Q24 18 28 6Z"/><path d="M22 16 Q14 10 10 16 Q14 22 22 18Z"/><path d="M24 20 Q32 22 32 30 Q26 30 23 22Z"/><path d="M17 25 Q9 22 6 28 Q10 33 17 27Z"/></g>`,
- crispyRice:`<g fill="#fcf8ee" stroke="#d6c9ac" stroke-width=".9"><ellipse cx="12" cy="15" rx="3.5" ry="2.4"/><ellipse cx="18" cy="12" rx="3.2" ry="2.3"/><ellipse cx="24" cy="14" rx="3.5" ry="2.4"/><ellipse cx="29" cy="19" rx="3.2" ry="2.3"/><ellipse cx="14" cy="21" rx="3.4" ry="2.4"/><ellipse cx="21" cy="20" rx="3.6" ry="2.5"/><ellipse cx="27" cy="25" rx="3.4" ry="2.3"/><ellipse cx="17" cy="27" rx="3.5" ry="2.4"/><ellipse cx="23" cy="31" rx="3.1" ry="2.2"/></g>`,
- kombu:`<g fill="none" stroke="#2a2a28" stroke-width="3" stroke-linecap="round"><path d="M5 14 Q12 6 16 14 Q20 22 27 14 Q31 9 36 13"/><path d="M6 28 Q13 20 18 28 Q23 35 30 26"/></g><g fill="#8b8f8c"><circle cx="12" cy="10" r=".9"/><circle cx="22" cy="18" r=".9"/><circle cx="16" cy="27" r=".9"/><circle cx="27" cy="27" r=".9"/></g>`,
- buckwheat:`<g fill="#c9a26a" stroke="#9d7a48" stroke-width=".8"><path d="M10 12 L15 10 L13 16Z"/><path d="M20 9 L25 11 L21 15Z"/><path d="M27 17 L32 19 L28 22Z"/><path d="M13 22 L18 20 L17 26Z"/><path d="M22 23 L27 24 L23 29Z"/><path d="M9 29 L14 28 L11 33Z"/><path d="M28 29 L33 30 L29 34Z"/></g>`,
- gingerSoy:`<ellipse cx="20" cy="23" rx="16" ry="10" fill="#3b2516"/><ellipse cx="15" cy="20" rx="5" ry="2" fill="#6b4a32"/><g fill="#d8c48c"><circle cx="22" cy="25" r="1"/><circle cx="26" cy="21" r="1"/><circle cx="14" cy="27" r="1"/></g>`,
- sugar:`<path d="M6 32 Q20 14 34 32Z" fill="#f7f6f2" stroke="#cfd3d8" stroke-width="1.2"/><g fill="#cfd3d8"><circle cx="14" cy="10" r="1"/><circle cx="20" cy="7" r="1"/><circle cx="26" cy="11" r="1"/><circle cx="18" cy="14" r=".8"/><circle cx="23" cy="16" r=".8"/></g>`,
- miso:`<path d="M6 10 Q14 6 20 12 T34 12 M6 20 Q14 16 20 22 T34 22 M6 30 Q14 26 20 32 T34 32" stroke="#d29c2a" stroke-width="3.4" fill="none" stroke-linecap="round"/>`,
- sesame:`<g fill="#fbf7ea" stroke="#c4b48a" stroke-width=".9"><ellipse cx="12" cy="13" rx="2.6" ry="1.6" transform="rotate(-30 12 13)"/><ellipse cx="22" cy="10" rx="2.6" ry="1.6" transform="rotate(20 22 10)"/><ellipse cx="29" cy="18" rx="2.6" ry="1.6"/><ellipse cx="16" cy="21" rx="2.6" ry="1.6" transform="rotate(40 16 21)"/><ellipse cx="25" cy="26" rx="2.6" ry="1.6" transform="rotate(-20 25 26)"/><ellipse cx="11" cy="29" rx="2.6" ry="1.6"/><ellipse cx="19" cy="31" rx="2.6" ry="1.6" transform="rotate(60 19 31)"/></g>`,
- sauce:`<path d="M20 5 Q31 20 31 25 A11 11 0 0 1 9 25 Q9 20 20 5Z" fill="#c4802c"/><path d="M15 23 Q15 18 19 14" stroke="#efb867" stroke-width="2.2" fill="none" stroke-linecap="round"/>`,
- nuts:`<g fill="#d8ad74" stroke="#a87d47" stroke-width=".8"><path d="M9 14 L15 11 L16 17 L10 18Z"/><path d="M20 9 L26 10 L24 15 L19 14Z"/><path d="M27 18 L33 19 L31 24 L26 23Z"/><path d="M14 22 L20 21 L19 27 L13 26Z"/><path d="M22 27 L28 27 L27 32 L21 31Z"/><path d="M8 28 L12 27 L12 32 L8 32Z"/></g>`,
- garlicSoy:`<ellipse cx="20" cy="22" rx="15" ry="13" fill="#fdfdfb" stroke="#d6d6d0" stroke-width="1.4"/><ellipse cx="20" cy="22" rx="10.5" ry="9" fill="#d9761f"/><g fill="#f6c27c"><circle cx="17" cy="20" r="1.1"/><circle cx="23" cy="23" r="1.1"/><circle cx="19" cy="26" r="1"/><circle cx="24" cy="18" r="1"/></g>`,
- lettuce:`<path d="M5 26 Q4 14 14 12 Q16 5 24 8 Q33 8 34 18 Q38 26 30 31 Q22 35 14 33 Q5 33 5 26Z" fill="#8fce4c"/><path d="M10 28 Q20 20 30 14 M16 22 L14 15 M22 19 L24 12 M26 22 L32 24" stroke="#c9ec8c" stroke-width="1.6" fill="none"/>`,
- greenBean:`<g stroke-linecap="round" fill="none"><path d="M6 30 L32 8" stroke="#4f9a35" stroke-width="3"/><path d="M8 35 L35 16" stroke="#5aab3e" stroke-width="2.6"/><path d="M4 22 L24 5" stroke="#438a2d" stroke-width="2.6"/></g>`,
- tremella:`<path d="M8 24 Q6 12 17 11 Q20 4 28 9 Q36 14 32 23 Q34 32 23 32 Q12 34 8 24Z" fill="#f3eddc" stroke="#d6c9a4" stroke-width="1.2"/><path d="M14 22 Q18 15 24 18 Q28 22 22 26" stroke="#d6c9a4" stroke-width="1.2" fill="none"/>`,
- puree:`<path d="M6 28 Q4 18 14 16 Q16 8 25 10 Q35 12 34 22 Q36 31 24 33 Q10 35 6 28Z" fill="#f1ad1c"/><path d="M13 20 Q19 16 26 18" stroke="#fbd474" stroke-width="2" fill="none"/>`,
- brownSugar:`<path d="M5 12 L35 8 M5 19 L35 15 M5 26 L35 22 M5 33 L35 29" stroke="#3f1d0e" stroke-width="2.6" stroke-linecap="round"/><g fill="#3f1d0e"><circle cx="35" cy="8" r="2"/><circle cx="35" cy="15" r="2"/><circle cx="35" cy="22" r="2"/><circle cx="35" cy="29" r="2"/></g>`,
- nitroBall:`<circle cx="20" cy="21" r="14" fill="#fdfdfb" stroke="#dcdcd4" stroke-width="1.2"/><path d="M12 24 Q14 30 22 31" stroke="#e8e6dc" stroke-width="2.5" fill="none"/><circle cx="15" cy="15" r="3" fill="#fff"/>`,
- fridge:`<rect x="9" y="4" width="22" height="32" rx="3" fill="#dfe5ec" stroke="#405880" stroke-width="2"/><path d="M9 15 H31" stroke="#405880" stroke-width="2"/><path d="M27 8 V12 M27 19 V27" stroke="#405880" stroke-width="2.2" stroke-linecap="round"/>`,
- wok:`<path d="M4 18 H30 Q30 30 17 30 Q4 30 4 18Z" fill="#3a3f46"/><path d="M30 20 L38 16" stroke="#7a5a3a" stroke-width="3.4" stroke-linecap="round"/><path d="M10 14 Q12 10 10 6 M17 14 Q19 9 17 5 M24 14 Q26 10 24 6" stroke="#e0662c" stroke-width="2" fill="none" stroke-linecap="round"/>`,
- oven:`<rect x="4" y="7" width="32" height="26" rx="3" fill="#dfe5ec" stroke="#405880" stroke-width="2"/><rect x="8" y="11" width="18" height="18" rx="2" fill="#2f3b4e"/><circle cx="31" cy="14" r="2" fill="#405880"/><circle cx="31" cy="21" r="2" fill="#405880"/><path d="M11 20 Q14 17 17 20 T23 20" stroke="#f0a050" stroke-width="1.6" fill="none"/>`,
- stove:`<rect x="5" y="27" width="30" height="7" rx="2" fill="#3a3f46"/><path d="M20 6 Q28 14 26 20 Q25 25 20 26 Q14 25 14 20 Q13 15 18 12 Q18 17 21 17 Q22 12 20 6Z" fill="#e8662a"/><path d="M20 15 Q24 19 22 23 Q20 25 18 22 Q18 19 20 15Z" fill="#ffc04a"/>`,
- glass:`<path d="M9 10 H31 L29 31 Q28 34 25 34 H15 Q12 34 11 31Z" fill="#e5f0f3" stroke="#8fb0bd" stroke-width="2"/><path d="M14 14 L13 28" stroke="#fff" stroke-width="2" stroke-linecap="round"/>`,
-};
-
-/* ---------- data ---------- */
-const NOODLE_STYLE={
- curly:{n:34,len:34,amp:3.2,freq:2.2,w:4.6,curl:.9},
- straight:{n:30,len:72,amp:1.4,freq:.5,w:3.6,curl:.25},
- ribbon:{n:20,len:38,amp:4.2,freq:1.6,w:9,curl:.55},
- thin:{n:42,len:44,amp:2.6,freq:1.9,w:2.8,curl:.75},
-};
-const BASES={
- camellia:{zh:"山茶花粗捲麵",en:"Camellia thick curly",style:"curly",color:"#e7b64a"},
- squidink:{zh:"墨魚汁中直麵",en:"Squid ink straight",style:"straight",color:"#202027"},
- knife:{zh:"刀削波浪麵",en:"Knife-cut wavy",style:"ribbon",color:"#ecc56a"},
- golden:{zh:"澳洲黃金小麥中直麵",en:"Golden wheat straight",style:"straight",color:"#e2c26a"},
- stone:{zh:"石臼細扁麵",en:"Stone-mill thin flat",style:"thin",color:"#d6b06a"},
- fridge:{zh:"冰箱",en:"Fridge"},wok:{zh:"炒鍋",en:"Wok",wait:1.3},oven:{zh:"蒸烤箱",en:"Combi oven",wait:1.5},stove:{zh:"爐火",en:"Stove",wait:1.5},glass:{zh:"玻璃小盅",en:"Glass cup"},
-};
-const NOODLE_BASES=["camellia","squidink","knife","golden","stone"];
-const STATION_BASES=["fridge","wok","oven","stove","glass"];
-const ITEMS={
- egg:["溏心蛋","Soft egg"],wagyu:["炙燒和牛臉頰","Seared wagyu cheek"],kailan:["炙燒芥藍花","Charred kailan"],kongxin:["醋漬空心菜","Pickled water spinach"],
- squid:["炙燒中卷","Seared squid"],woodear:["醋漬雲耳","Pickled wood ear"],chayote:["龍鬚菜","Chayote shoots"],cordyceps:["蟲草花","Cordyceps flower"],
- sorghum:["炸高粱","Fried sorghum"],karasumi:["烏魚子粉","Mullet roe powder"],cauli:["炙燒白花椰","Charred cauliflower"],chicken:["雞肉絲","Shredded chicken"],
- garlicKoji:["大蒜鹽麴醬","Garlic shio-koji"],barley:["炸薏仁","Fried Job's tears"],chervil:["山蘿蔔葉","Chervil"],duck:["鴨腿絲","Shredded duck"],
- arugula:["芝麻葉","Arugula"],crispyRice:["炸鍋巴","Crispy rice"],
- kombu:["鹽昆布絲","Shio kombu"],buckwheat:["炸蕎麥","Fried buckwheat"],gingerSoy:["薑汁醬油","Ginger soy"],sugar:["糖粉","Powdered sugar"],
- miso:["味噌醬","Miso sauce"],sesame:["白芝麻","White sesame"],sauce:["淋醬汁","Sauce"],nuts:["堅果碎","Crushed nuts"],
- garlicSoy:["蒜蓉醬油","Garlic soy dip"],lettuce:["生菜","Lettuce"],greenBean:["四季豆絲","Green bean strips"],
- tremella:["銀耳雪燕","Snow fungus"],puree:["地瓜南瓜醬","Yam-pumpkin purée"],brownSugar:["黑糖","Brown sugar"],nitroBall:["氮氣球","Nitro foam"],
-};
-const POOL={
- noodle:["egg","wagyu","kailan","kongxin","squid","woodear","chayote","cordyceps","sorghum","karasumi","cauli","chicken","garlicKoji","barley","chervil","duck","arugula","crispyRice"],
- side:["kombu","buckwheat","gingerSoy","sugar","miso","sesame","sauce","nuts","garlicSoy","lettuce"],
- soup:["greenBean","cordyceps","chervil","kongxin","sesame","sorghum"],
- dessert:["tremella","puree","brownSugar","nitroBall","sugar","sesame"],
-};
-const DISHES=[
- {id:"n1",cat:"noodle",no:"①",zh:"炙燒和牛臉頰拌麵",en:"Seared Wagyu Beef Cheek Noodles",price:380,base:"camellia",items:["wagyu","kailan","egg","kongxin"],sauce:"#e6a447",bowl:{rim:"#4a392d",inner:"#efe7d3",deco:"speckle"}},
- {id:"n2",cat:"noodle",no:"②",zh:"黑豉椒香墨魚麵",en:"Squid Ink Noodles with Black Bean & Chili",price:290,base:"squidink",items:["squid","kailan","egg","woodear"],sauce:"#18181d",bowl:{rim:"#1f2125",inner:"#eef1f4",deco:"waves"}},
- {id:"n3",cat:"noodle",no:"③",zh:"蝦汁烏魚子刀削麵",en:"Knife-Cut Noodles with Prawn Jus & Mullet Roe",price:280,base:"knife",items:["chayote","cordyceps","sorghum","karasumi"],sauce:"#e8963c",bowl:{rim:"#2b2b2b",inner:"#f6f2e8",deco:"thin"},ring:["chayote","cordyceps"],center:["sorghum","karasumi"]},
- {id:"n4",cat:"noodle",no:"④",zh:"野菜雞絲拌麵",en:"Shredded Chicken Noodles with Wild Greens",price:280,base:"golden",items:["cauli","chicken","garlicKoji","barley","egg","chervil"],sauce:"#5cba3a",bowl:{rim:"#2b2d31",inner:"#efe9da",deco:"stripes"}},
- {id:"n5",cat:"noodle",no:"⑤",zh:"油封鴨腿絲拌麵",en:"Shredded Duck Leg Confit Noodles",price:260,base:"stone",items:["duck","arugula","egg","crispyRice"],sauce:"#c99e55",bowl:{rim:"#5a7085",inner:"#b8996b",deco:"speckle"}},
- {id:"s1",cat:"side",zh:"昆布漬黃瓜",en:"Kombu-Marinated Cucumber",price:40,base:"fridge",items:["kombu"],plate:"sqgrey"},
- {id:"s2",cat:"side",zh:"川麻雨來菇",en:"Sichuan Mala Nostoc Commune",price:60,base:"fridge",items:["buckwheat"],plate:"sqgrey"},
- {id:"s3",cat:"side",zh:"薑汁番茄",en:"Tomatoes with Ginger Soy Dip",price:60,base:"fridge",items:["gingerSoy","sugar"],plate:"roundred"},
- {id:"s4",cat:"side",zh:"豆香味噌秋葵",en:"Okra with Miso Bean Dressing",price:60,base:"fridge",items:["miso"],plate:"roundpat"},
- {id:"s5",cat:"side",zh:"紅麴高麗菜乾",en:"Red Koji Dried Cabbage",price:60,base:"fridge",items:["sesame"],plate:"roundpat"},
- {id:"s6",cat:"side",zh:"堅果豆腐",en:"Nut Tofu",price:60,base:"fridge",items:["sauce","nuts"],plate:"sqgrey"},
- {id:"s7",cat:"side",zh:"肉香花椰菜乾",en:"Dried Cauliflower with Savory Pork",price:120,base:"wok",items:[],plate:"rectdark"},
- {id:"s8",cat:"side",zh:"油封白切松阪豬",en:"Sliced Confit Pork Jowl",price:180,base:"oven",items:["garlicSoy"],plate:"rectdark"},
- {id:"s9",cat:"side",zh:"辣炒筍牛肚",en:"Stir-Fried Beef Tripe with Bamboo Shoots",price:220,base:"wok",items:[],plate:"rectdark"},
- {id:"s10",cat:"side",zh:"油封文昌雞腿",en:"Wenchang Chicken Leg Confit",price:240,base:"oven",items:["lettuce","sauce"],plate:"rectceladon"},
- {id:"p1",cat:"soup",zh:"酸白菜蔬菜湯",en:"Pickled Cabbage Vegetable Soup",price:80,base:"stove",items:["greenBean"],broth:"#d7a246"},
- {id:"p2",cat:"soup",zh:"干貝燉雞湯",en:"Chicken Soup with Dried Scallops",price:200,base:"stove",items:["cordyceps"],broth:"#ead9a2"},
- {id:"d1",cat:"dessert",zh:"主廚甜品",en:"Chef's Dessert",price:90,base:"glass",items:["tremella","puree","brownSugar","nitroBall"],ordered:true},
+/* ===== Menu data (game price = menu price) ===== */
+const GO_BONUS=100, START_MONEY=1000, JAIL_FEE=50, LV_MULT=[1,3,6,10];
+const GROUPS=[
+  {c:'#9ad66f',zh:'小菜',en:'Sides'},
+  {c:'#3aa76d',zh:'小菜',en:'Sides'},
+  {c:'#c08552',zh:'飲品',en:'Drinks'},
+  {c:'#f2b33d',zh:'小菜',en:'Sides'},
+  {c:'#56b0db',zh:'湯品',en:'Soups'},
+  {c:'#e0533d',zh:'小菜',en:'Sides'},
+  {c:'#9b7be0',zh:'主食',en:'Noodles'},
+  {c:'#405880',zh:'主食',en:'Noodles'},
 ];
-const byId=Object.fromEntries(DISHES.map(d=>[d.id,d]));
-const ORDER_TIME={noodle:20,side:14,soup:15,dessert:17};
+const P=(g,price,zh,en,sz,se,o={})=>({t:'p',g,price,zh,en,sz,se,...o});
+const TILES=[
+  {t:'go',ic:'🏮',sz:'開店',se:'Open Shop'},
+  P(0,40,'昆布漬黃瓜','Kombu-Marinated Cucumber','黃瓜','Cucumber'),
+  {t:'chance',ic:'❓',sz:'今日特餐',se:'Daily Special'},
+  P(0,60,'川麻雨來菇','Sichuan Mala Nostoc Commune','雨來菇','Nostoc'),
+  P(0,60,'薑汁番茄','Tomatoes with Ginger Soy Dip','番茄','Tomato'),
+  {t:'fate',ic:'📋',sz:'店務',se:'Shop Duty'},
+  P(1,60,'豆香味噌秋葵','Okra with Miso Bean Dressing','秋葵','Okra'),
+  {t:'jail',ic:'🧽',sz:'洗碗區',se:'Dish Pit'},
+  P(1,60,'紅麴高麗菜乾','Red Koji Dried Cabbage','高麗菜乾','Cabbage'),
+  P(1,100,'堅果豆腐（大）','Nut Tofu (L)','堅果豆腐','Nut Tofu'),
+  P(2,60,'桂花可可麥茶','Osmanthus Cocoa Barley Tea','可可麥茶','Barley Tea'),
+  {t:'chance',ic:'❓',sz:'今日特餐',se:'Daily Special'},
+  P(2,80,'冬瓜水果茶','Winter Melon Fruit Tea','冬瓜茶','Melon Tea'),
+  P(2,90,'香料仙草氣泡飲','Spiced Grass Jelly Sparkling Drink','仙草飲','Grass Jelly'),
+  {t:'free',ic:'🍮',sz:'主廚甜品',se:"Chef's Dessert"},
+  P(3,120,'肉香花椰菜乾','Dried Cauliflower with Savory Pork','花椰菜乾','Cauliflower',{spicy:1}),
+  {t:'fate',ic:'📋',sz:'店務',se:'Shop Duty'},
+  P(3,180,'油封白切松阪豬','Sliced Confit Pork Jowl','松阪豬','Pork Jowl'),
+  P(4,80,'酸白菜蔬菜湯','Pickled Cabbage Vegetable Soup','酸白菜湯','Veggie Soup'),
+  P(4,200,'干貝燉雞湯','Chicken Soup with Dried Scallops','干貝雞湯','Scallop Soup'),
+  P(5,220,'辣炒筍牛肚','Stir-Fried Beef Tripe with Bamboo Shoots','辣炒牛肚','Beef Tripe',{spicy:1}),
+  {t:'gojail',ic:'🫧',sz:'去洗碗',se:'Go Wash'},
+  P(5,240,'油封文昌雞腿','Wenchang Chicken Leg Confit','文昌雞腿','Chicken Leg'),
+  P(6,260,'油封鴨腿絲拌麵','Shredded Duck Leg Confit Noodles','鴨腿拌麵','Duck Noodles',{iz:'冬菜｜橄欖菜｜油蔥',ie:'Preserved Cabbage | Olive-Leaf Mustard Greens | Shallot Oil'}),
+  P(6,280,'野菜雞絲拌麵','Shredded Chicken Noodles with Wild Greens','雞絲拌麵','Chicken Noodles',{iz:'烏甜菜｜薏仁｜雞油',ie:"Black Nightshade Greens | Job's Tears | Chicken Fat"}),
+  P(6,280,'蝦汁烏魚子刀削麵','Knife-Cut Noodles with Prawn Jus & Mullet Roe','刀削麵','Knife-Cut',{iz:'蝦高湯｜明太子｜金沙',ie:'Prawn Broth | Mentaiko | Salted Egg Yolk'}),
+  P(7,290,'黑豉椒香墨魚麵','Squid Ink Noodles with Black Bean & Chili','墨魚麵','Squid Ink',{spicy:1,iz:'黑蒜頭｜青花椒｜老菜脯',ie:'Black Garlic | Green Sichuan Peppercorn | Aged Preserved Radish'}),
+  P(7,380,'炙燒和牛臉頰拌麵','Seared Wagyu Beef Cheek Noodles','和牛拌麵','Wagyu',{spicy:1,iz:'酸白菜｜蕃茄｜牛油',ie:'Pickled Napa Cabbage | Tomato | Beef Tallow'}),
+];
+const N_T=TILES.length, CORNERS=[0,7,14,21], JAIL=7;
+const COLORS=['#ef5b4c','#ffd23f','#3ec9a7','#e7a1d0'];
 
-/* ---------- drawing ---------- */
-function icon(id,size){return `<svg viewBox="0 0 40 40" width="${size||44}" height="${size||44}" aria-hidden="true">${IC[id]||""}</svg>`}
-function noodleSwatch(b){const s=NOODLE_STYLE[BASES[b].style],c=BASES[b].color,id="sw"+(++uid);
-  return `<svg viewBox="0 0 40 40" aria-hidden="true"><defs><clipPath id="${id}"><circle cx="20" cy="20" r="17"/></clipPath></defs><circle cx="20" cy="20" r="18" fill="#f3efe4" stroke="#bcc6d5"/><g clip-path="url(#${id})">${strands(rng(b.length*31),{n:Math.round(s.n*.35),len:s.len*.38,amp:s.amp*.45,freq:s.freq,w:s.w*.5,curl:s.curl,color:c,area:13,cx:20,cy:20,steps:10})}</g></svg>`}
-function baseIcon(b){return NOODLE_BASES.includes(b)?noodleSwatch(b):icon(b)}
-function place(id,x,y,s,rot){return `<g transform="translate(${f1(x)} ${f1(y)}) rotate(${rot||0}) scale(${s}) translate(-20 -20)">${IC[id]}</g>`}
+const CHANCE=[
+  {zh:'客人大讚好吃，留下小費 $50',en:'A guest loved the noodles and left a $50 tip',fn:p=>{p.money+=50}},
+  {zh:'被美食帳號推薦，生意大好 +$100',en:'A food account recommended you. Collect $100',fn:p=>{p.money+=100}},
+  {zh:'外國客人加點一輪氣泡水，收入 $35',en:'Visitors order a round of sparkling water. Collect $35',fn:p=>{p.money+=35}},
+  {zh:'回到開店格，領 $100',en:'Go back to Open Shop and collect $100',mv:0},
+  {zh:'今天想吃和牛，前往「炙燒和牛臉頰拌麵」',en:'Craving wagyu. Go to Seared Wagyu Beef Cheek Noodles',mv:27},
+  {zh:'天氣變冷了，前往「干貝燉雞湯」',en:"It's getting cold. Go to Chicken Soup with Dried Scallops",mv:19},
+  {zh:'走錯路，後退 3 格',en:'Wrong turn. Move back 3 spaces',back:3},
+  {zh:'打翻一鍋湯，去洗碗區',en:'You spilled a pot of soup. Go to the Dish Pit',jail:true},
+];
+const FATE=[
+  {zh:'冷氣壞了，修理費 $80',en:'The AC broke. Pay $80 for repairs',fn:p=>pay(p,80)},
+  {zh:'食材漲價，多付 $50',en:'Ingredient prices went up. Pay $50',fn:p=>pay(p,50)},
+  {zh:'繳店租 $100',en:'Rent is due. Pay $100',fn:p=>pay(p,100)},
+  {zh:'衛生稽查滿分，獎金 $80',en:'Perfect health inspection. Collect $80',fn:p=>{p.money+=80}},
+  {zh:'統一發票中獎 $100',en:'Your receipt won the lottery. Collect $100',fn:p=>{p.money+=100}},
+  {zh:'大家來捧場，每位玩家付你 $20',en:'Everyone comes to eat. Each player pays you $20',fn:p=>others(p).forEach(o=>pay(o,20,p))},
+  {zh:'請大家吃員工餐，付每位玩家 $20',en:'Staff meal on you. Pay each player $20',fn:p=>others(p).forEach(o=>pay(p,20,o))},
+  {zh:'店面整修，每顆人氣星付 $25',en:'Renovations: pay $25 per popularity star',fn:p=>{const n=ownedBy(pidOf(p)).reduce((a,i)=>a+(S.level[i]||0),0);pay(p,25*n)}},
+  {zh:'拿到一張「免洗碗券」',en:'You get a Skip-the-Dishes ticket',fn:p=>{p.card++}},
+];
 
-const SLOTS=[[0,-46],[-48,4],[46,12],[-4,48],[-34,-34],[38,-32]];
-function drawBowl(d,st){
-  const b=d.bowl,cid="nc"+(++uid);let s=`<circle cx="120" cy="126" r="112" fill="rgba(35,49,74,.13)"/><circle cx="120" cy="120" r="112" fill="${b.rim}"/>`;
-  if(b.deco==="thin"){s+=`<circle cx="120" cy="120" r="108" fill="${b.inner}"/>`}
-  else{s+=`<circle cx="120" cy="120" r="99" fill="${b.inner}"/>`}
-  const r=rng(d.id.charCodeAt(1)*97);
-  if(b.deco==="speckle")s+=dots(r,140,104,120,120,(x,y)=>Math.hypot(x-120,y-120)>80?`<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(1+r()*1.6)}" fill="${shade(b.inner,-.22)}" opacity=".7"/>`:"");
-  if(b.deco==="waves"){for(let i=0;i<5;i++){s+=`<path d="M${40+i*8} ${150+i*6} Q120 ${92+i*10} ${200-i*8} ${150+i*6}" stroke="#2f4f8a" stroke-width="2.2" fill="none" opacity=".75"/>`}s+=dots(r,70,98,120,120,(x,y)=>`<circle cx="${f1(x)}" cy="${f1(y)}" r="1.4" fill="#5f7fb0" opacity=".5"/>`)}
-  if(b.deco==="stripes"){for(let i=0;i<48;i++){const a=i/48*Math.PI*2;s+=`<line x1="${f1(120+Math.cos(a)*76)}" y1="${f1(120+Math.sin(a)*76)}" x2="${f1(120+Math.cos(a)*98)}" y2="${f1(120+Math.sin(a)*98)}" stroke="#6e7178" stroke-width="1"/>`}}
-  s+=`<defs><clipPath id="${cid}"><circle cx="120" cy="120" r="74"/></clipPath></defs>`;
-  if(st.base){const ns=NOODLE_STYLE[BASES[d.base].style];s+=`<g clip-path="url(#${cid})">${strands(rng(7+d.id.charCodeAt(1)),{...ns,color:d.sauce,area:58,cx:120,cy:120})}</g>`}
-  const added=st.added||[];
-  d.items.forEach((it,i)=>{
-    if(!added.includes(it))return;
-    if(d.ring&&d.ring.includes(it)){const off=d.ring.indexOf(it)*22.5;for(let k=0;k<8;k++){const a=(k*45+off)*Math.PI/180;s+=place(it,120+Math.cos(a)*78,120+Math.sin(a)*78,1.05,k*45+off+90)}return}
-    if(d.center&&d.center.includes(it)){s+=place(it,120,120,it==="karasumi"?1.7:1.5,0);return}
-    const [x,y]=SLOTS[i%SLOTS.length];s+=place(it,120+x,120+y,1.45,(i*37)%30-15);
+/* ===== Text ===== */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let LANG='zh';
+try{LANG=localStorage.getItem('jiushi-lang')||(/^zh/i.test(navigator.language)?'zh':'en')}catch(e){}
+const N=p=>esc(S.players[p].name);
+const TN=i=>LANG==='zh'?TILES[i].sz:TILES[i].se;
+const stars=l=>'★'.repeat(l);
+const TX={
+zh:{
+  logo:'久時大富翁',logoSub:"JOSH'S NOODLES · TYCOON",turn:n=>`輪到 ${n}`,thinking:n=>`${n} 思考中…`,
+  roll:'擲骰子',jailInfo:k=>`在洗碗區（第 ${k} 次）。擲出雙數就能出來`,payOut:`付 $${JAIL_FEE}`,useCard:'用免洗碗券',boost:'提升人氣',
+  buyQ:(n,p)=>`要買下「${n}」嗎？ $${p}`,buy:'買下',skip:'不買',again:'雙數！再擲一次',end:'結束回合',result:'看結果',
+  cpu:'電腦',human:'真人',washing:'洗碗中',ticket:n=>`券×${n}`,broke:'破產',
+  logTitle:'店內廣播',round:(a,b)=>`第 ${a} / ${b} 輪`,roundInf:a=>`第 ${a} 輪 · 不限輪數`,newGame:'新遊戲',langBtn:'English',
+  tip:'集滿同色可提升人氣、收更多租金。格子價格就是菜單價格。',
+  price:'價格',priceNote:'菜單價格',baseRent:'基本租金',fullSet:'集滿同色',star:l=>`人氣 ${stars(l)}`,boostCost:'每次提升人氣',owner:'老闆',noOwner:'還沒人買',spicy:'🌶 辣',
+  boostBtn:c=>`提升人氣 $${c}`,maxed:'人氣已滿',needSet:'集滿同色才能提升人氣',noMoney:'錢不夠',close:'關閉',done:'完成',
+  boostTitle:'提升店面人氣',boostNote:m=>`人氣越高，租金越高。現金 $${m}`,plain:'普通',rentNow:r=>`租 $${r}`,
+  desc:{go:`每經過一次領 $${GO_BONUS}`,jail:`被派來洗碗時，要擲出雙數、付 $${JAIL_FEE} 或用免洗碗券才能離開。路過沒事。`,free:'吃一份主廚甜品，休息一下。',gojail:'直接去洗碗區，不經過開店格。',chance:'抽一張「今日特餐」卡，多半是好事。',fate:'抽一張「店務」卡，有好有壞。'},
+  cornerSub:{go:`+$${GO_BONUS}`,jail:'路過',free:'休息',gojail:'直接去'},
+  winner:n=>`${n} 是拌麵大亨`,rankNote:'依總資產排名（現金＋店面＋人氣）',playAgain:'再玩一局',viewBoard:'看盤面',
+  intro:'在久時拌麵的菜單上買下小菜、湯品、飲品和拌麵，集滿同色就能提升人氣、收更多租金。輪數到了，總資產最多的人獲勝。',
+  players:'人數',rounds:'輪數',pplN:n=>`${n} 人`,rN:n=>`${n} 輪`,unlimited:'不限',start:'開始遊戲',resume:'繼續上一局',nameLabel:k=>`玩家 ${k} 名字`,
+  defNames:['玩家1','電腦 阿久','電腦 小筷','電腦 湯匙'],kind:{chance:'今日特餐',fate:'店務'},
+  log:{
+    start:m=>`開店囉！每人 $${m}`,passGo:p=>`${N(p)} 經過開店，領 $${GO_BONUS}`,
+    roll:(p,a,b)=>`${N(p)} 擲出 ${a} + ${b} = ${a+b}${a===b?'（雙數）':''}`,triple:()=>'連續三次雙數，太忙了！',
+    jailed:p=>`🧽 ${N(p)} 被派去洗碗區`,card:(p,t,c)=>`${t==='fate'?'📋':'❓'} ${N(p)}：${(t==='fate'?FATE:CHANCE)[c].zh}`,
+    noCash:(p,i)=>`${N(p)} 錢不夠買「${TN(i)}」`,rent:(p,i,o,r)=>`${N(p)} 點了「${TN(i)}」，付 ${N(o)} $${r}`,
+    own:(p,i)=>`${N(p)} 回到自己的「${TN(i)}」`,free:p=>`${N(p)} 吃了主廚甜品，休息一下`,visit:p=>`${N(p)} 路過洗碗區`,onGo:p=>`${N(p)} 停在開店格`,
+    jailRoll:(p,a,b)=>`${N(p)} 在洗碗區擲出 ${a} + ${b}`,jailOut:p=>`${N(p)} 擲出雙數，洗完碗了`,jailMax:p=>`${N(p)} 洗了三輪，付 $${JAIL_FEE} 出來`,
+    jailPay:p=>`${N(p)} 付 $${JAIL_FEE} 離開洗碗區`,jailCard:p=>`${N(p)} 用了免洗碗券`,
+    bought:(p,i)=>`🏪 ${N(p)} 買下「${TN(i)}」`,fullSet:p=>`✨ ${N(p)} 集滿一組顏色！租金加倍，可以提升人氣`,skip:(p,i)=>`${N(p)} 沒有買「${TN(i)}」`,
+    boosted:(p,i,l,r)=>`⭐ ${N(p)} 把「${TN(i)}」提升到人氣 ${stars(l)}，租金 $${r}`,
+    sellUp:(p,i)=>`${N(p)} 賣掉「${TN(i)}」一顆人氣星換現金`,sellBack:(p,i)=>`${N(p)} 把「${TN(i)}」賣回銀行`,
+    broke:p=>`💥 ${N(p)} 破產了`,win:p=>`🏆 遊戲結束，${N(p)} 獲勝！`,hint:()=>'按「開始遊戲」設定玩家'
+  }
+},
+en:{
+  logo:'Noodle Tycoon',logoSub:"JOSH'S NOODLES · 久時拌麵",turn:n=>`${n}'s turn`,thinking:n=>`${n} is thinking…`,
+  roll:'Roll',jailInfo:k=>`In the Dish Pit (try ${k}). Roll doubles to get out`,payOut:`Pay $${JAIL_FEE}`,useCard:'Use ticket',boost:'Boost',
+  buyQ:(n,p)=>`Buy ${n} for $${p}?`,buy:'Buy',skip:'Pass',again:'Doubles! Roll again',end:'End turn',result:'Results',
+  cpu:'CPU',human:'Human',washing:'washing dishes',ticket:n=>`ticket×${n}`,broke:'bankrupt',
+  logTitle:'SHOP NEWS',round:(a,b)=>`Round ${a} / ${b}`,roundInf:a=>`Round ${a} · no limit`,newGame:'New game',langBtn:'中文',
+  tip:'Own a full color set to boost popularity and raise rent. Prices match the real menu.',
+  price:'Price',priceNote:'menu price',baseRent:'Base rent',fullSet:'Full color set',star:l=>`Popularity ${stars(l)}`,boostCost:'Each boost',owner:'Owner',noOwner:'For sale',spicy:'🌶 Spicy',
+  boostBtn:c=>`Boost $${c}`,maxed:'Popularity is maxed',needSet:'Own the full color set to boost',noMoney:'Not enough cash',close:'Close',done:'Done',
+  boostTitle:'Boost popularity',boostNote:m=>`More stars, higher rent. Cash $${m}`,plain:'No stars',rentNow:r=>`rent $${r}`,
+  desc:{go:`Collect $${GO_BONUS} every time you pass.`,jail:`If you're sent here, roll doubles, pay $${JAIL_FEE}, or use a ticket to leave. Just passing is fine.`,free:"Enjoy the Chef's Dessert and take a break.",gojail:'Go straight to the Dish Pit. Do not pass Open Shop.',chance:'Draw a Daily Special card. Usually good news.',fate:'Draw a Shop Duty card. Could go either way.'},
+  cornerSub:{go:`+$${GO_BONUS}`,jail:'Visit',free:'Rest',gojail:'Go now'},
+  winner:n=>`${n} is the Noodle Tycoon`,rankNote:'Ranked by total assets (cash + shops + stars)',playAgain:'Play again',viewBoard:'View board',
+  intro:"Buy sides, soups, drinks and noodles from the Josh's Noodles menu. Own a full color set to boost popularity and collect more rent. When the rounds run out, the richest player wins.",
+  players:'Players',rounds:'Rounds',pplN:n=>`${n}`,rN:n=>`${n}`,unlimited:'No limit',start:'Start',resume:'Resume last game',nameLabel:k=>`Player ${k} name`,
+  defNames:['Player 1','CPU Josh','CPU Chopsticks','CPU Spoon'],kind:{chance:'Daily Special',fate:'Shop Duty'},
+  log:{
+    start:m=>`Doors open! Everyone starts with $${m}`,passGo:p=>`${N(p)} passes Open Shop, collects $${GO_BONUS}`,
+    roll:(p,a,b)=>`${N(p)} rolls ${a} + ${b} = ${a+b}${a===b?' (doubles)':''}`,triple:()=>'Three doubles in a row. Too busy!',
+    jailed:p=>`🧽 ${N(p)} is sent to the Dish Pit`,card:(p,t,c)=>`${t==='fate'?'📋':'❓'} ${N(p)}: ${(t==='fate'?FATE:CHANCE)[c].en}`,
+    noCash:(p,i)=>`${N(p)} can't afford ${TN(i)}`,rent:(p,i,o,r)=>`${N(p)} orders ${TN(i)}, pays ${N(o)} $${r}`,
+    own:(p,i)=>`${N(p)} stops by their own ${TN(i)}`,free:p=>`${N(p)} enjoys the Chef's Dessert`,visit:p=>`${N(p)} walks past the Dish Pit`,onGo:p=>`${N(p)} lands on Open Shop`,
+    jailRoll:(p,a,b)=>`${N(p)} rolls ${a} + ${b} in the Dish Pit`,jailOut:p=>`${N(p)} rolls doubles and finishes the dishes`,jailMax:p=>`${N(p)} pays $${JAIL_FEE} after three turns of dishes`,
+    jailPay:p=>`${N(p)} pays $${JAIL_FEE} to leave the Dish Pit`,jailCard:p=>`${N(p)} uses a Skip-the-Dishes ticket`,
+    bought:(p,i)=>`🏪 ${N(p)} buys ${TN(i)}`,fullSet:p=>`✨ ${N(p)} owns a full color set! Rent doubles and popularity can be boosted`,skip:(p,i)=>`${N(p)} passes on ${TN(i)}`,
+    boosted:(p,i,l,r)=>`⭐ ${N(p)} boosts ${TN(i)} to ${stars(l)}, rent $${r}`,
+    sellUp:(p,i)=>`${N(p)} sells a star on ${TN(i)}`,sellBack:(p,i)=>`${N(p)} sells ${TN(i)} back to the bank`,
+    broke:p=>`💥 ${N(p)} is bankrupt`,win:p=>`🏆 Game over. ${N(p)} wins!`,hint:()=>'Tap Start to set up players'
+  }
+}};
+const t=k=>TX[LANG][k];
+const logText=e=>{try{return TX[LANG].log[e[0]](...e.slice(1))}catch(x){return ''}};
+
+/* ===== Helpers ===== */
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const sleep=ms=>new Promise(r=>setTimeout(r,RM?Math.min(ms,80):ms));
+const rnd=n=>Math.floor(Math.random()*n);
+let S=null, cpuTimer=null, sheetFn=null;
+
+const tokenCache={};
+function tokenImg(color){
+  if(tokenCache[color])return tokenCache[color];
+  const map=["..y..y..","...y..y.","..y..y..","kkkkkkkk","kcccccck",".kcccck.","..kkkk..","...kk..."];
+  const c=document.createElement('canvas');c.width=8;c.height=8;const x=c.getContext('2d');
+  map.forEach((row,r)=>[...row].forEach((ch,col)=>{const f={y:'#ffffff',k:'#0d1222',c:color}[ch];if(f){x.fillStyle=f;x.fillRect(col,r,1,1)}}));
+  return tokenCache[color]=c.toDataURL();
+}
+const cur=()=>S.players[S.turn];
+const pidOf=p=>S.players.indexOf(p);
+const alive=()=>S.players.filter(p=>!p.out);
+const others=p=>S.players.filter(o=>o!==p&&!o.out);
+const ownedBy=pid=>Object.keys(S.owner).map(Number).filter(i=>S.owner[i]===pid);
+const groupTiles=g=>TILES.map((x,i)=>x.t==='p'&&x.g===g?i:-1).filter(i=>i>=0);
+const ownsGroup=(pid,g)=>groupTiles(g).every(i=>S.owner[i]===pid);
+const baseRent=i=>Math.max(5,Math.round(TILES[i].price*0.15/5)*5);
+const upCost=i=>Math.round(TILES[i].price/2/10)*10;
+function rentOf(i){
+  const x=TILES[i],o=S.owner[i],lv=S.level[i]||0,b=baseRent(i);
+  if(lv>0)return b*LV_MULT[lv];
+  return ownsGroup(o,x.g)?b*2:b;
+}
+const assets=pid=>{const p=S.players[pid];return p.money+ownedBy(pid).reduce((a,i)=>a+TILES[i].price+(S.level[i]||0)*upCost(i),0)};
+const canUpgrade=(pid,i)=>{const x=TILES[i];return x.t==='p'&&S.owner[i]===pid&&ownsGroup(pid,x.g)&&(S.level[i]||0)<3&&S.players[pid].money>=upCost(i)};
+const upgradable=pid=>ownedBy(pid).filter(i=>canUpgrade(pid,i));
+function log(...e){S.log.unshift(e);if(S.log.length>60)S.log.pop()}
+function save(){try{if(S&&S.phase!=='over'&&!S.demo)localStorage.setItem('jiushi-monopoly-v2',JSON.stringify(S));else if(S&&S.phase==='over')localStorage.removeItem('jiushi-monopoly-v2')}catch(e){}}
+function loadSaved(){try{const s=localStorage.getItem('jiushi-monopoly-v2');return s?JSON.parse(s):null}catch(e){return null}}
+
+/* ===== Board ===== */
+function cell(i){
+  if(i<=7)return[8,8-i];
+  if(i<=14)return[8-(i-7),1];
+  if(i<=21)return[1,1+(i-14)];
+  return[1+(i-21),8];
+}
+function buildBoard(){
+  const b=$('#board');b.innerHTML='';
+  TILES.forEach((x,i)=>{
+    const d=document.createElement('div');
+    const[r,c]=cell(i);d.style.gridRow=r;d.style.gridColumn=c;
+    d.className='tile'+(CORNERS.includes(i)?' corner':x.t==='p'?'':' special')+(LANG==='en'?' en':'');
+    d.id='t'+i;d.tabIndex=0;d.setAttribute('role','button');d.setAttribute('aria-label',LANG==='zh'?(x.zh||x.sz):(x.en||x.se));
+    const name=TN(i);
+    let h;
+    if(x.t==='p')h=`<div class="band" style="background:${GROUPS[x.g].c}"></div><div class="nm">${name}</div><div class="pr">$${x.price}</div>`;
+    else if(CORNERS.includes(i))h=`<div class="ic">${x.ic}</div><div class="nm">${name}</div><div class="pr">${t('cornerSub')[x.t]}</div>`;
+    else h=`<div class="ic">${x.ic}</div><div class="nm">${name}</div>`;
+    d.innerHTML=h+'<div class="lv"></div><div class="toks"></div><div class="own"></div>';
+    d.onclick=()=>openTile(i);
+    d.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openTile(i)}};
+    b.appendChild(d);
   });
-  return s;
+  const c=document.createElement('div');c.className='center';c.id='center';b.appendChild(c);
+  $('#legend').innerHTML=GROUPS.map((g,k)=>{const ps=groupTiles(k).map(i=>TILES[i].price);return `<span><i style="background:${g.c}"></i>${g[LANG]} $${Math.min(...ps)}–${Math.max(...ps)}</span>`}).join('')+`<span class="tip">${t('tip')}</span>`;
+  $('#logTitle').textContent=t('logTitle');$('#langBtn').textContent=t('langBtn');$('#newGame').textContent=t('newGame');
+  document.documentElement.lang=LANG==='zh'?'zh-Hant':'en';
 }
-const PLATES={
- sqgrey:()=>{let s=`<rect x="22" y="26" width="200" height="200" rx="14" fill="rgba(35,49,74,.13)"/><rect x="20" y="20" width="200" height="200" rx="14" fill="#aeb6bd"/><rect x="54" y="54" width="132" height="132" rx="4" fill="#c2c9cf"/>`;for(let i=0;i<14;i++){s+=`<line x1="28" x2="212" y1="${28+i*13.5}" y2="${28+i*13.5}" stroke="#9aa3ab" stroke-width="1" opacity=".55"/>`}return s},
- rectdark:()=>{let s=`<rect x="10" y="56" width="224" height="140" rx="8" fill="rgba(35,49,74,.15)"/><rect x="8" y="50" width="224" height="140" rx="8" fill="#555c56"/>`;for(let i=0;i<12;i++){s+=`<line x1="14" x2="226" y1="${58+i*11}" y2="${58+i*11}" stroke="#454b46" stroke-width="1.4"/>`}return s},
- rectceladon:()=>`<rect x="10" y="56" width="224" height="140" rx="10" fill="rgba(35,49,74,.15)"/><rect x="8" y="50" width="224" height="140" rx="10" fill="#c8a777"/><rect x="16" y="58" width="208" height="124" rx="6" fill="#7f948d"/>`,
- roundred:()=>`<circle cx="120" cy="126" r="106" fill="rgba(35,49,74,.13)"/><circle cx="120" cy="120" r="106" fill="#fcfbf7" stroke="#e1ded6"/><circle cx="120" cy="120" r="98" fill="none" stroke="#8a2c22" stroke-width="2.4"/><circle cx="120" cy="120" r="80" fill="#f6f4ee"/>`,
- roundpat:()=>{let s=`<circle cx="120" cy="126" r="106" fill="rgba(35,49,74,.13)"/><circle cx="120" cy="120" r="106" fill="#fbf8ee" stroke="#e1ded6"/><circle cx="120" cy="120" r="94" fill="none" stroke="#d9d0b3" stroke-width="11"/>`;for(let i=0;i<4;i++){const a=i*Math.PI/2+.6;s+=`<rect x="${f1(120+Math.cos(a)*94-4)}" y="${f1(120+Math.sin(a)*94-4)}" width="8" height="8" fill="#e6b98a" transform="rotate(45 ${f1(120+Math.cos(a)*94)} ${f1(120+Math.sin(a)*94)})"/>`}return s},
-};
-const SIDE_FOOD={
- s1:r=>{let s='';[[-8,-30,-18],[10,-12,-8],[-14,6,-22],[6,22,-12],[-4,40,-20],[20,2,-30],[-22,-12,-6]].forEach(([x,y,a])=>{s+=`<g transform="translate(${120+x} ${120+y}) rotate(${a})"><path d="M-40 0 Q0 -13 40 0 Q0 13 -40 0Z" fill="#5c9733"/><path d="M-33 0 Q0 -7 33 0 Q0 7 -33 0Z" fill="#c9d35b"/></g>`});return s},
- s2:r=>dots(r,46,42,120,120,(x,y)=>`<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="${f1(6+r()*6)}" ry="${f1(4+r()*5)}" fill="${["#3a2818","#5b3e22","#78532c","#2a1d12"][Math.floor(r()*4)]}" transform="rotate(${Math.floor(r()*180)} ${f1(x)} ${f1(y)})"/>`),
- s3:()=>{let s='';for(let i=0;i<6;i++){s+=`<g transform="translate(120 120) rotate(${i*60-90})"><path d="M8 -12 Q46 -22 58 0 Q46 22 8 12Z" fill="#d8432d"/><path d="M18 -6 Q42 -12 48 0 Q42 12 18 6Z" fill="#ee7a5a"/><path d="M24 0 L42 0" stroke="#f3e0a0" stroke-width="2.4" stroke-linecap="round"/></g>`}return s},
- s4:()=>{let s='';[[86,-6],[104,4],[122,-4],[140,6]].forEach(([x,o])=>{s+=`<rect x="${x-9}" y="${70+o}" width="18" height="96" rx="8" fill="#5daf42"/><line x1="${x}" x2="${x}" y1="${76+o}" y2="${160+o}" stroke="#3f8a2c" stroke-width="1.4"/>`});return s},
- s5:r=>strands(r,{n:34,len:34,amp:2.5,freq:1.4,w:5.5,curl:.8,color:"#e98a48",area:36,cx:120,cy:120}),
- s6:()=>{let s='';[[-26,-26],[26,-26],[-26,26],[26,26]].forEach(([x,y])=>{s+=`<g transform="translate(${120+x} ${120+y}) rotate(45)"><rect x="-24" y="-24" width="48" height="48" rx="3" fill="#d9c7b0"/><rect x="-20" y="-24" width="44" height="44" rx="3" fill="#ecdcc6"/></g>`});return s},
- s7:r=>strands(r,{n:22,len:44,amp:1.5,freq:.7,w:6,curl:.6,color:"#c79457",area:40,cx:120,cy:120})+dots(r,16,48,120,120,(x,y)=>`<circle cx="${f1(x)}" cy="${f1(y)}" r="${f1(6+r()*4)}" fill="#b98652"/>`)+dots(r,6,52,120,120,(x,y)=>`<rect x="${f1(x-7)}" y="${f1(y-7)}" width="14" height="14" rx="3" fill="#c9862f"/>`)+dots(r,14,50,120,120,(x,y)=>`<circle cx="${f1(x)}" cy="${f1(y)}" r="3" fill="none" stroke="#7cc04a" stroke-width="2"/>`),
- s8:()=>{let s='';for(let i=0;i<7;i++){const x=104+i*15,a=-24+i*6;s+=`<g transform="translate(${x} 122) rotate(${a})"><path d="M-14 -42 Q16 -48 18 -20 L16 40 Q-6 46 -14 30Z" fill="#edd0ca" stroke="#f0e0b2" stroke-width="3"/></g>`}return s},
- s9:r=>strands(r,{n:26,len:34,amp:2.8,freq:2.4,w:7,curl:.7,color:"#7b4f2d",area:40,cx:120,cy:120})+dots(r,7,46,120,120,(x,y)=>`<rect x="${f1(x-5)}" y="${f1(y-18)}" width="10" height="36" rx="5" fill="#f2d468" transform="rotate(${Math.floor(r()*180)} ${f1(x)} ${f1(y)})"/>`)+dots(r,6,46,120,120,(x,y)=>`<rect x="${f1(x-3)}" y="${f1(y-12)}" width="6" height="24" rx="3" fill="#4f9a38" transform="rotate(${Math.floor(r()*180)} ${f1(x)} ${f1(y)})"/>`),
- s10:()=>{let s='';for(let i=0;i<11;i++){const x=56+i*12.5,y=120+(i%2?4:-4);s+=`<rect x="${x-8}" y="${y-28}" width="16" height="56" rx="6" fill="#efc7b4"/><rect x="${x-8}" y="${y-28}" width="16" height="18" rx="6" fill="#f2bf48"/>`}return s},
-};
-const SIDE_OVER={
- kombu:r=>`<g fill="none" stroke="#252523" stroke-width="3.4" stroke-linecap="round"><path d="M70 96 Q90 80 104 98 Q116 114 134 96 Q150 82 170 100"/><path d="M84 146 Q100 128 116 146 Q130 160 154 140"/></g>`,
- buckwheat:r=>dots(r,24,46,120,120,(x,y)=>`<path d="M${f1(x)} ${f1(y-3)} L${f1(x+4)} ${f1(y+3)} L${f1(x-4)} ${f1(y+3)}Z" fill="#d8b47a" stroke="#a37e4a" stroke-width=".8"/>`),
- gingerSoy:()=>`<circle cx="120" cy="120" r="58" fill="#3a2416" opacity=".92"/>`,
- sugar:r=>dots(r,220,72,120,120,(x,y)=>`<circle cx="${f1(x)}" cy="${f1(y)}" r="1" fill="#fff" opacity=".9"/>`),
- miso:()=>{let s='';for(let i=0;i<9;i++){s+=`<path d="M72 ${84+i*10} Q100 ${78+i*10} 112 ${86+i*10} T152 ${84+i*10}" stroke="#d29b28" stroke-width="3.4" fill="none" stroke-linecap="round"/>`}return s+`<ellipse cx="178" cy="122" rx="22" ry="26" fill="#cf8e2a"/>`},
- sesame:r=>dots(r,28,44,120,120,(x,y)=>`<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="2.6" ry="1.5" fill="#fbf7ea" transform="rotate(${Math.floor(r()*180)} ${f1(x)} ${f1(y)})"/>`),
- sauce:(r,d)=>d.id==="s6"?[[-26,-26],[26,-26],[-26,26],[26,26]].map(([x,y])=>`<rect x="${120+x-20}" y="${120+y-20}" width="40" height="40" rx="6" fill="#c97f2e" opacity=".85" transform="rotate(45 ${120+x} ${120+y})"/>`).join(""):`<path d="M60 116 Q120 100 180 118" stroke="#a8742e" stroke-width="12" fill="none" stroke-linecap="round" opacity=".9"/>`,
- nuts:r=>dots(r,40,52,120,120,(x,y)=>`<rect x="${f1(x-2.5)}" y="${f1(y-2.5)}" width="5" height="5" rx="1" fill="#e4bd84"/>`),
- garlicSoy:()=>place("garlicSoy",46,120,1.8,0),
- lettuce:()=>[60,96,132,170].map((x,i)=>place("lettuce",x,120+(i%2?10:-10),1.9,i*40)).join(""),
-};
-const UNDER=["gingerSoy","lettuce"];
-function drawSide(d,st){
-  const r=rng(d.id.length*131+d.id.charCodeAt(1));let s=PLATES[d.plate]();const added=st.added||[];
-  d.items.forEach(it=>{if(UNDER.includes(it)&&added.includes(it))s+=SIDE_OVER[it](rng(3),d)});
-  if(st.base)s+=SIDE_FOOD[d.id](r);
-  d.items.forEach(it=>{if(!UNDER.includes(it)&&added.includes(it))s+=SIDE_OVER[it](rng(it.length*17),d)});
-  return s;
+
+/* ===== Render ===== */
+function renderTiles(){
+  TILES.forEach((x,i)=>{
+    const el=$('#t'+i),o=S.owner[i];
+    el.classList.toggle('owned',o!==undefined);
+    if(o!==undefined)el.style.setProperty('--oc',S.players[o].color);
+    el.querySelector('.lv').innerHTML='<i></i>'.repeat(S.level[i]||0);
+    el.querySelector('.toks').innerHTML=S.players.filter(p=>!p.out&&p.pos===i).map(p=>`<img alt="" src="${tokenImg(p.color)}">`).join('');
+  });
 }
-function drawSoup(d,st){
-  const lid=`<g transform="translate(64 112)"><circle r="60" fill="#fbfaf6" stroke="#ddd9cf"/>${["#d9533c","#5aa64a","#3c5fa8","#7a4a2a"].map((c,i)=>`<path d="M0 0 L${f1(Math.cos(i*1.57+.3)*60)} ${f1(Math.sin(i*1.57+.3)*60)} A60 60 0 0 1 ${f1(Math.cos(i*1.57+.9)*60)} ${f1(Math.sin(i*1.57+.9)*60)}Z" fill="${c}"/>`).join("")}<circle r="30" fill="#fbfaf6" stroke="#b08a4a" stroke-width="2"/><circle r="22" fill="#fff" stroke="#e1ddd2"/></g>`;
-  let s=`<circle cx="152" cy="132" r="84" fill="rgba(35,49,74,.13)"/>${lid}<circle cx="152" cy="126" r="84" fill="#fbfaf6" stroke="#5b4a3a" stroke-width="3"/><circle cx="152" cy="126" r="70" fill="${st.base?d.broth:"#f2efe7"}"/>`;
-  const r=rng(d.id.charCodeAt(1)*7);
-  if(st.base){
-    if(d.id==="p1"){s+=dots(r,9,50,152,126,(x,y)=>`<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="12" ry="6" fill="#3d7a2c" transform="rotate(${Math.floor(r()*180)} ${f1(x)} ${f1(y)})"/>`)+dots(r,8,48,152,126,(x,y)=>`<ellipse cx="${f1(x)}" cy="${f1(y)}" rx="10" ry="5" fill="#efe1ad"/>`)+dots(r,4,40,152,126,(x,y)=>`<rect x="${f1(x-4)}" y="${f1(y-6)}" width="8" height="12" rx="2" fill="#e0603e"/>`)}
-    else{s+=`<path d="M140 120 Q160 110 170 132 Q168 150 150 150 Q134 146 140 120Z" fill="#e3c9ae"/><path d="M152 106 L156 132 M146 108 L148 128 M160 108 L162 128" stroke="#f4ecd2" stroke-width="2"/>`}
+function renderPlayers(){
+  $('#players').innerHTML=S.players.map((p,k)=>`
+    <div class="pl${k===S.turn&&S.phase!=='over'?' now':''}${p.out?' out':''}">
+      <img alt="" src="${tokenImg(p.color)}"><div class="n">${esc(p.name)}</div>
+      <div><span class="m">$${p.money}</span> <span class="tag">${p.cpu?t('cpu'):t('human')}${p.jail?' · '+t('washing'):''}${p.card?' · '+t('ticket')(p.card):''}${p.out?' · '+t('broke'):''}</span></div>
+    </div>`).join('');
+  $('#log').innerHTML=S.log.map(e=>`<li>${logText(e)}</li>`).join('');
+  $('#roundInfo').textContent=S.maxRounds?t('round')(Math.min(S.round,S.maxRounds),S.maxRounds):t('roundInf')(S.round);
+}
+function dieHTML(v,rolling){
+  const on={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]}[v]||[];
+  return `<div class="die${rolling?' roll':''}">${[...Array(9)].map((_,k)=>`<i class="${on.includes(k)?'on':''}"></i>`).join('')}</div>`;
+}
+function renderCenter(rolling){
+  const p=cur(),c=$('#center');
+  let ctrl='';
+  if(S.phase==='over')ctrl=`<button class="btn" onclick="showOver()">${t('result')}</button>`;
+  else if(p.cpu||S.phase==='busy')ctrl=`<span class="thinking">${p.cpu?t('thinking')(esc(p.name)):'…'}</span>`;
+  else if(S.phase==='roll'){
+    if(p.jail){
+      ctrl=`<span class="q">${t('jailInfo')(p.jail)}</span><button class="btn" onclick="jailRoll()">${t('roll')}</button>
+      <button class="btn alt" onclick="jailPay()" ${p.money<JAIL_FEE?'disabled':''}>${t('payOut')}</button>
+      ${p.card?`<button class="btn alt" onclick="jailCard()">${t('useCard')}</button>`:''}`;
+    }else ctrl=`<button class="btn" onclick="doRoll()">${t('roll')}</button>`;
+    if(upgradable(S.turn).length)ctrl+=`<button class="btn alt" onclick="openUpgrades()">${t('boost')}</button>`;
   }
-  if((st.added||[]).includes("greenBean"))s+=dots(rng(9),12,46,152,126,(x,y)=>`<path d="M${f1(x-10)} ${f1(y+6)} L${f1(x+10)} ${f1(y-6)}" stroke="#4f9a35" stroke-width="3" stroke-linecap="round"/>`);
-  if((st.added||[]).includes("cordyceps"))s+=place("cordyceps",152,118,1.5,0)+place("cordyceps",162,128,1.2,60);
-  return s;
+  else if(S.phase==='buy'){
+    const i=p.pos;
+    ctrl=`<span class="q">${t('buyQ')(TN(i),TILES[i].price)}</span>
+    <button class="btn" onclick="buy()">${t('buy')}</button><button class="btn alt" onclick="openTile(${i})">?</button><button class="btn alt" onclick="skipBuy()">${t('skip')}</button>`;
+  }
+  else if(S.phase==='post'){
+    ctrl=S.again&&!p.out?`<button class="btn" onclick="reroll()">${t('again')}</button>`:`<button class="btn" onclick="endTurn()">${t('end')}</button>`;
+    if(upgradable(S.turn).length)ctrl+=`<button class="btn alt" onclick="openUpgrades()">${t('boost')}</button>`;
+  }
+  const card=c.querySelector('.card');
+  c.innerHTML=`
+    <div class="logo">${t('logo')}<small>${t('logoSub')}</small></div>
+    <div class="turn"><img alt="" src="${tokenImg(p.color)}">${t('turn')(esc(p.name))}</div>
+    <div class="dice">${dieHTML(S.dice[0],rolling)}${dieHTML(S.dice[1],rolling)}</div>
+    <div class="ctrl">${ctrl}</div>
+    <div class="last">${S.log.slice(0,2).map((e,k)=>k?logText(e):`<b>${logText(e)}</b>`).join('<br>')}</div>`;
+  if(card)c.appendChild(card);
 }
-function drawDessert(d,st){
-  let s=PLATES.roundred();
-  if(st.base)s+=`<circle cx="120" cy="120" r="74" fill="#eaf2f4" stroke="#c4d6dc" stroke-width="6" opacity=".95"/><circle cx="120" cy="120" r="62" fill="#f6f9fa"/>`;
-  const a=st.added||[];
-  if(a.includes("tremella"))s+=dots(rng(5),8,34,120,120,(x,y)=>place("tremella",x,y,1,0));
-  if(a.includes("puree"))s+=`<circle cx="120" cy="120" r="58" fill="#f1ad1c"/>`;
-  if(a.includes("brownSugar")){for(let i=0;i<9;i++){s+=`<path d="M${74+i*6} ${82+i*9} L${164-i*2} ${76+i*9}" stroke="#3a1a0c" stroke-width="3" stroke-linecap="round" opacity=".9"/>`}}
-  if(a.includes("nitroBall"))s+=`<circle cx="98" cy="98" r="24" fill="#fdfdfb" stroke="#e1e0d8"/><path d="M84 104 Q90 116 104 117" stroke="#e8e6dc" stroke-width="3" fill="none"/>`;
-  return s;
-}
-function drawDish(d,st){
-  const inner=d.cat==="noodle"?drawBowl(d,st):d.cat==="side"?drawSide(d,st):d.cat==="soup"?drawSoup(d,st):drawDessert(d,st);
-  return `<svg viewBox="0 0 240 240" role="img" aria-label="${d.zh}">${inner}</svg>`;
-}
+function render(){renderTiles();renderPlayers();renderCenter();save();scheduleCpu()}
 
-/* ---------- sound ---------- */
-let actx=null,soundOn=true;
-function tone(freq,dur,type,vol,delay){if(!soundOn||!actx)return;const t=actx.currentTime+(delay||0),o=actx.createOscillator(),g=actx.createGain();o.type=type;o.frequency.value=freq;g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(actx.destination);o.start(t);o.stop(t+dur)}
-const sfx={ding:()=>{tone(1318,.5,"sine",.25);tone(1760,.6,"sine",.18,.09)},tap:()=>tone(660,.07,"triangle",.12),buzz:()=>tone(150,.18,"square",.07),end:()=>{[784,988,1175,1568].forEach((f,i)=>tone(f,.4,"sine",.18,i*.12))}};
-
-/* ---------- state ---------- */
-const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
-let lang=store.get("jjs-lang")==="en"?"en":"zh";soundOn=store.get("jjs-sound")!=="off";
-const L=()=>T[lang];const nm=x=>lang==="zh"?x.zh:x.en;const itemName=id=>ITEMS[id][lang==="zh"?0:1];
-const GAME_LEN=90;
-let G=null,raf=0,last=0,toastTimer=0;
-const app=$("#app");
-
-function startScreen(){
-  cancelAnimationFrame(raf);G=null;
-  const best=+store.get("jjs-best")||0;
-  app.innerHTML=`<div class="screen">
-   <div class="brandline"><b>|</b>${L().brand}<b>|</b></div>
-   <div class="hero">${drawDish(byId.n1,{base:true,added:byId.n1.items})}</div>
-   <h1>${L().title}</h1>
-   <p class="sub">${L().sub}</p>
-   <ol class="how">${L().how.map((h,i)=>`<li><span>${i+1}</span>${h}</li>`).join("")}</ol>
-   <div class="toggles">
-    <div class="seg" role="group" aria-label="Language"><button id="lz" aria-pressed="${lang==="zh"}">中文</button><button id="le" aria-pressed="${lang==="en"}">English</button></div>
-    <div class="seg"><button id="snd" aria-pressed="${soundOn}">${L().sound[soundOn?0:1]}</button></div>
-   </div>
-   <button class="primary" id="go">${L().start}</button>
-   <div class="best">${best?`${L().best} ${best.toLocaleString()}`:""}</div>
-   <div class="spacer"></div></div>`;
-  $("#lz").onclick=()=>{lang="zh";store.set("jjs-lang","zh");startScreen()};
-  $("#le").onclick=()=>{lang="en";store.set("jjs-lang","en");startScreen()};
-  $("#snd").onclick=()=>{soundOn=!soundOn;store.set("jjs-sound",soundOn?"on":"off");startScreen()};
-  $("#go").onclick=startGame;
+/* ===== Money ===== */
+function pay(p,amt,to){p.money-=amt;if(to)to.money+=amt;if(p.money<0)liquidate(p)}
+function liquidate(p){
+  const pid=pidOf(p),mine=ownedBy(pid).sort((a,b)=>TILES[b].price-TILES[a].price);
+  for(const i of mine)while((S.level[i]||0)>0&&p.money<0){S.level[i]--;p.money+=upCost(i)/2;log('sellUp',pid,i)}
+  for(const i of mine)if(p.money<0){delete S.owner[i];S.level[i]=0;p.money+=TILES[i].price/2;log('sellBack',pid,i)}
+  if(p.money<0){p.out=true;p.money=0;ownedBy(pid).forEach(i=>{delete S.owner[i];S.level[i]=0});log('broke',pid)}
 }
 
+/* ===== Moves ===== */
+async function moveSteps(p,n){
+  const dir=n>0?1:-1;
+  for(let k=0;k<Math.abs(n);k++){
+    p.pos=(p.pos+dir+N_T)%N_T;
+    if(dir>0&&p.pos===0){p.money+=GO_BONUS;log('passGo',pidOf(p))}
+    renderTiles();renderPlayers();await sleep(160);
+  }
+  const el=$('#t'+p.pos);el.classList.remove('hot');void el.offsetWidth;el.classList.add('hot');
+}
+const moveTo=(p,to)=>moveSteps(p,(to-p.pos+N_T)%N_T);
+function sendJail(p){p.pos=JAIL;p.jail=1;S.again=false;S.dbl=0;log('jailed',pidOf(p))}
+async function showCard(type,ci){
+  const deck=type==='chance'?CHANCE:FATE;
+  const c=document.createElement('div');c.className='card'+(type==='fate'?' fate':'');
+  c.innerHTML=`<span class="k">${t('kind')[type]}</span><p>${deck[ci][LANG]}</p>`;
+  $('#center').appendChild(c);await sleep(1900);c.remove();
+}
+async function drawCard(p,type){
+  const deck=type==='chance'?CHANCE:FATE,ci=rnd(deck.length),c=deck[ci];
+  log('card',pidOf(p),type,ci);renderPlayers();
+  await showCard(type,ci);
+  if(c.jail){sendJail(p);return false}
+  if(c.mv!==undefined){await moveTo(p,c.mv);await land(p);return true}
+  if(c.back){await moveSteps(p,-c.back);await land(p);return true}
+  c.fn(p);return false;
+}
+async function land(p){
+  const i=p.pos,x=TILES[i],pid=pidOf(p);
+  if(x.t==='p'){
+    const o=S.owner[i];
+    if(o===undefined){if(p.money>=x.price){S.phase='buy';return}log('noCash',pid,i)}
+    else if(o!==pid){if(!S.players[o].out){const r=rentOf(i);log('rent',pid,i,o,r);pay(p,r,S.players[o])}}
+    else log('own',pid,i);
+  }
+  else if(x.t==='chance'||x.t==='fate'){if(await drawCard(p,x.t))return}
+  else if(x.t==='gojail')sendJail(p);
+  else if(x.t==='free')log('free',pid);
+  else if(x.t==='jail')log('visit',pid);
+  else if(x.t==='go')log('onGo',pid);
+  S.phase='post';
+}
+
+/* ===== Actions ===== */
+async function rollDice(){
+  S.phase='busy';renderPlayers();
+  for(let k=0;k<8;k++){S.dice=[1+rnd(6),1+rnd(6)];renderCenter(true);await sleep(60)}
+  S.dice=[1+rnd(6),1+rnd(6)];renderCenter();return S.dice;
+}
+async function doRoll(){
+  if(S.phase!=='roll'||S.demo&&openSetup())return;
+  const p=cur(),[a,b]=await rollDice();
+  log('roll',S.turn,a,b);
+  if(a===b){S.dbl++;if(S.dbl>=3){log('triple');sendJail(p);S.phase='post';return finish()}S.again=true}else S.again=false;
+  await moveSteps(p,a+b);await land(p);
+  if(p.jail)S.again=false;
+  finish();
+}
+async function jailRoll(){
+  if(S.phase!=='roll')return;
+  const p=cur(),[a,b]=await rollDice();
+  log('jailRoll',S.turn,a,b);S.again=false;
+  if(a===b){p.jail=0;log('jailOut',S.turn)}
+  else if(p.jail>=3){p.jail=0;log('jailMax',S.turn);pay(p,JAIL_FEE)}
+  else{p.jail++;S.phase='post';return finish()}
+  if(p.out){S.phase='post';return finish()}
+  await moveSteps(p,a+b);await land(p);finish();
+}
+function jailPay(){const p=cur();if(p.money<JAIL_FEE)return;pay(p,JAIL_FEE);p.jail=0;log('jailPay',S.turn);render()}
+function jailCard(){const p=cur();if(!p.card)return;p.card--;p.jail=0;log('jailCard',S.turn);render()}
+function buy(){
+  if(S.phase!=='buy')return;
+  const p=cur(),i=p.pos,x=TILES[i];
+  pay(p,x.price);S.owner[i]=S.turn;log('bought',S.turn,i);
+  if(ownsGroup(S.turn,x.g))log('fullSet',S.turn);
+  S.phase='post';closeSheet();render();
+}
+function skipBuy(){if(S.phase!=='buy')return;log('skip',S.turn,cur().pos);S.phase='post';closeSheet();render()}
+function upgrade(i){
+  if(!canUpgrade(S.turn,i))return;
+  pay(cur(),upCost(i));S.level[i]=(S.level[i]||0)+1;
+  log('boosted',S.turn,i,S.level[i],rentOf(i));render();
+}
+function reroll(){S.phase='roll';render()}
+function finish(){
+  if(alive().length<=1)return gameOver();
+  if(cur().out){S.phase='post';S.again=false}
+  render();
+}
+function endTurn(){
+  if(S.phase!=='post')return;
+  closeSheet();S.dbl=0;S.again=false;
+  let k=S.turn;
+  do{k=(k+1)%S.players.length;if(k===0)S.round++}while(S.players[k].out);
+  S.turn=k;
+  if(S.maxRounds&&S.round>S.maxRounds)return gameOver();
+  S.phase='roll';render();
+}
+const ranking=()=>S.players.map((p,k)=>({p,k,a:p.out?-1:assets(k)})).sort((x,y)=>y.a-x.a);
+function gameOver(){S.phase='over';log('win',ranking()[0].k);render();showOver()}
+
+/* ===== CPU ===== */
+function scheduleCpu(){
+  clearTimeout(cpuTimer);
+  if(!S||S.demo||S.phase==='over'||S.phase==='busy'||!cur().cpu)return;
+  cpuTimer=setTimeout(cpuAct,750);
+}
+function cpuAct(){
+  const p=cur();if(!p.cpu)return;
+  if(S.phase==='roll'){if(p.jail){if(p.card)return jailCard();if(p.money>350)return jailPay();return jailRoll()}return doRoll()}
+  if(S.phase==='buy')return p.money-TILES[p.pos].price>=150?buy():skipBuy();
+  if(S.phase==='post'){
+    const up=upgradable(S.turn).sort((a,b)=>TILES[b].price-TILES[a].price).find(i=>p.money-upCost(i)>=250);
+    if(up!==undefined)return upgrade(up);
+    return S.again?reroll():endTurn();
+  }
+}
+
+/* ===== Sheets ===== */
+function sheet(fn,mid){sheetFn=[fn,mid];$('#overlay').innerHTML=`<div class="veil${mid?' mid':''}" onclick="if(event.target===this)closeSheet()"><div class="sheet" role="dialog">${fn()}</div></div>`}
+function closeSheet(){sheetFn=null;$('#overlay').innerHTML=''}
+function openTile(i){
+  if(!S)return;
+  sheet(()=>{
+    const x=TILES[i],o=S.owner[i];let h;
+    if(x.t==='p'){
+      const b=baseRent(i),lv=S.level[i]||0,full=o!==undefined&&ownsGroup(o,x.g);
+      const main=LANG==='zh'?x.zh:x.en,second=LANG==='zh'?x.en:x.zh;
+      h=`<h3><span class="sw" style="background:${GROUPS[x.g].c}"></span>${main}</h3>
+      <p class="sub">${second}${x.spicy?` <span class="chili">${t('spicy')}</span>`:''}</p>
+      ${x.iz?`<p class="ing"><span>${LANG==='zh'?x.iz:x.ie}</span><span>${LANG==='zh'?x.ie:x.iz}</span></p>`:''}
+      <div class="rows">
+        <span>${t('price')}</span><span>$${x.price} <span class="note">(${t('priceNote')})</span></span>
+        <span class="${o!==undefined&&!full&&!lv?'cur':''}">${t('baseRent')}</span><span>$${b}</span>
+        <span class="${full&&!lv?'cur':''}">${t('fullSet')}</span><span>$${b*2}</span>
+        ${[1,2,3].map(l=>`<span class="${lv===l?'cur':''}">${t('star')(l)}</span><span>$${b*LV_MULT[l]}</span>`).join('')}
+        <span>${t('boostCost')}</span><span>$${upCost(i)}</span>
+        <span>${t('owner')}</span><span>${o!==undefined?esc(S.players[o].name):t('noOwner')}</span>
+      </div>`;
+      if(!S.demo&&o===S.turn&&!cur().cpu&&(S.phase==='roll'||S.phase==='post')){
+        h+=canUpgrade(S.turn,i)?`<div class="act"><button class="btn" onclick="upgrade(${i});openTile(${i})">${t('boostBtn')(upCost(i))}</button></div>`
+          :`<p class="note">${lv>=3?t('maxed'):!ownsGroup(S.turn,x.g)?t('needSet'):t('noMoney')}</p>`;
+      }
+      if(S.phase==='buy'&&cur().pos===i&&!cur().cpu)h+=`<div class="act"><button class="btn" onclick="buy()">${t('buy')} $${x.price}</button><button class="btn alt" onclick="skipBuy()">${t('skip')}</button></div>`;
+    }else{
+      h=`<h3>${x.ic} ${TN(i)}</h3><p class="sub">${LANG==='zh'?x.se:x.sz}</p><p class="note" style="font-size:14px">${t('desc')[x.t]}</p>`;
+    }
+    return h+`<div class="act"><button class="btn alt" onclick="closeSheet()">${t('close')}</button></div>`;
+  });
+}
+function openUpgrades(){
+  sheet(()=>{
+    const list=ownedBy(S.turn).filter(i=>ownsGroup(S.turn,TILES[i].g));
+    return `<h3>${t('boostTitle')}</h3><p class="note">${t('boostNote')(cur().money)}</p>
+    <div class="up-list">${list.map(i=>`<div class="up-item"><span>${TN(i)} · ${stars(S.level[i]||0)||t('plain')} · ${t('rentNow')(rentOf(i))}</span>
+      ${canUpgrade(S.turn,i)?`<button class="btn" onclick="upgrade(${i});openUpgrades()">+ $${upCost(i)}</button>`:`<span class="note">${(S.level[i]||0)>=3?'★★★':t('noMoney')}</span>`}</div>`).join('')}</div>
+    <div class="act"><button class="btn alt" onclick="closeSheet()">${t('done')}</button></div>`;
+  });
+}
+function showOver(){
+  sheet(()=>{const r=ranking();return `<h3>🏆 ${t('winner')(esc(r[0].p.name))}</h3><p class="note">${t('rankNote')}</p>
+  <div class="rank">${r.map((x,n)=>`<div><span>${n+1}</span><img alt="" src="${tokenImg(x.p.color)}"><span>${esc(x.p.name)}</span><span>${x.a<0?t('broke'):'$'+x.a}</span></div>`).join('')}</div>
+  <div class="act"><button class="btn" onclick="openSetup()">${t('playAgain')}</button><button class="btn alt" onclick="closeSheet()">${t('viewBoard')}</button></div>`},true);
+}
+
+/* ===== Setup ===== */
+const setup={count:3,rounds:15,players:[{name:null,cpu:false},{name:null,cpu:true},{name:null,cpu:true},{name:null,cpu:true}]};
+const setupName=k=>setup.players[k].name??t('defNames')[k];
+function openSetup(){
+  sheet(()=>{
+    const saved=loadSaved();
+    const segP=[2,3,4].map(n=>`<button aria-pressed="${setup.count===n}" onclick="setup.count=${n};openSetup()">${t('pplN')(n)}</button>`).join('');
+    const segR=[10,15,25,0].map(v=>`<button aria-pressed="${setup.rounds===v}" onclick="setup.rounds=${v};openSetup()">${v?t('rN')(v):t('unlimited')}</button>`).join('');
+    const rows=setup.players.slice(0,setup.count).map((p,k)=>`
+      <div class="setup-row"><img alt="" src="${tokenImg(COLORS[k])}">
+        <input id="pn${k}" value="${esc(setupName(k))}" maxlength="12" aria-label="${t('nameLabel')(k+1)}" oninput="setup.players[${k}].name=this.value">
+        <div class="seg"><button aria-pressed="${!p.cpu}" onclick="setup.players[${k}].cpu=false;openSetup()">${t('human')}</button><button aria-pressed="${p.cpu}" onclick="setup.players[${k}].cpu=true;openSetup()">${t('cpu')}</button></div>
+      </div>`).join('');
+    return `<div class="setup-head"><h3>${t('logo')}</h3><button class="btn alt sm" onclick="toggleLang()">${t('langBtn')}</button></div>
+      <p class="note" style="font-size:13px">${t('intro')}</p>
+      <div class="field"><span>${t('players')}</span><div class="seg">${segP}</div></div>
+      ${rows}
+      <div class="field"><span>${t('rounds')}</span><div class="seg">${segR}</div></div>
+      <div class="act"><button class="btn" onclick="startGame()">${t('start')}</button>
+      ${saved&&saved.phase!=='over'?`<button class="btn alt" onclick="resume()">${t('resume')}</button>`:''}</div>`;
+  },true);
+  return true;
+}
 function startGame(){
-  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();actx.resume&&actx.resume()}catch(e){}
-  G={t:GAME_LEN,score:0,combo:0,best:0,served:0,revenue:0,missed:0,mistakes:0,taps:0,seen:new Set(),order:null,lastId:null};
-  app.innerHTML=`<div class="screen">
-   <div><div class="hud">
-     <div><div class="lbl">${L().score}</div><div class="val" id="hs">0</div></div>
-     <div class="clock" id="hc"><div class="lbl">${L().time}</div><div class="val" id="ht">90</div></div>
-     <div class="r"><div class="lbl">${L().rev}</div><div class="val" id="hr">$0</div></div>
-   </div><div class="timebar"><i id="htb"></i></div><div class="combo" id="hcombo"></div></div>
-   <div class="ticket" id="ticket"></div>
-   <div class="stage" id="stage"></div>
-   <div><div class="trayhead"><div class="step" id="step"></div><div class="stepnote" id="stepnote"></div></div>
-   <div class="tray" id="tray"></div>
-   <button class="serve" id="serve" disabled>${L().serve}</button></div>
-  </div>`;
-  $("#serve").onclick=serve;
-  newOrder();last=performance.now();raf=requestAnimationFrame(loop);
+  S={players:setup.players.slice(0,setup.count).map((p,k)=>({name:(setupName(k)||'').trim()||t('defNames')[0].replace('1',k+1),cpu:p.cpu,color:COLORS[k],money:START_MONEY,pos:0,jail:0,card:0,out:false})),
+    owner:{},level:{},turn:0,round:1,maxRounds:setup.rounds,phase:'roll',dice:[3,4],dbl:0,again:false,log:[]};
+  log('start',START_MONEY);closeSheet();render();
+}
+function resume(){const s=loadSaved();if(!s)return;S=s;if(S.phase==='busy')S.phase=S.again?'roll':'post';closeSheet();render()}
+function toggleLang(){
+  LANG=LANG==='zh'?'en':'zh';
+  try{localStorage.setItem('jiushi-lang',LANG)}catch(e){}
+  buildBoard();renderTiles();renderPlayers();renderCenter();
+  if(sheetFn)sheet(sheetFn[0],sheetFn[1]);
 }
 
-function pickDish(){
-  const el=GAME_LEN-G.t;let w;
-  if(el<20)w={noodle:1};else if(el<45)w={noodle:.6,side:.4};else w={noodle:.45,side:.3,soup:.15,dessert:.1};
-  let x=Math.random(),cat="noodle";for(const k in w){if((x-=w[k])<=0){cat=k;break}}
-  const list=DISHES.filter(d=>d.cat===cat&&d.id!==G.lastId);return list[Math.floor(Math.random()*list.length)];
+/* ===== Boot ===== */
+$('#newGame').onclick=openSetup;
+$('#langBtn').onclick=toggleLang;
+function boot(d){
+  buildBoard();
+  if(d&&d.S&&d.S.players){S=d.S;if(S.phase==='busy')S.phase='post';render();return}
+  S={demo:true,players:[0,1,2].map(k=>({name:t('defNames')[k],cpu:k>0,color:COLORS[k],money:START_MONEY,pos:0,jail:0,card:0,out:false})),
+    owner:{},level:{},turn:0,round:1,maxRounds:15,phase:'roll',dice:[3,4],dbl:0,again:false,log:[['hint']]};
+  renderTiles();renderPlayers();renderCenter();openSetup();
 }
-function newOrder(){
-  const d=pickDish();G.lastId=d.id;
-  const pool=POOL[d.cat].filter(i=>!d.items.includes(i));
-  const size=d.cat==="noodle"?8:6;
-  let extra=shuffle(pool).slice(0,Math.max(0,size-d.items.length));
-  if(d.id==="n3"&&!extra.includes("egg"))extra[0]="egg";
-  const tmax=ORDER_TIME[d.cat]*(GAME_LEN-G.t>45?.88:1);
-  G.order={d,phase:"base",added:[],tmax,tl:tmax,first:!G.seen.has(d.id),hint:false,tiles:shuffle(d.items.concat(extra)),table:1+Math.floor(Math.random()*8),mist:0};
-  G.seen.add(d.id);
-  renderTicket();renderStage();renderTray();
-}
-function renderTicket(){
-  const o=G.order,d=o.d,show=o.first||o.hint;
-  const steps=[{name:nm(BASES[d.base]),done:o.phase!=="base",base:1}].concat(d.items.map(i=>({name:itemName(i),done:o.added.includes(i)})));
-  $("#ticket").innerHTML=`<div class="t-top"><span>${L().table} ${o.table}</span><span>$${d.price}</span></div>
-   <div class="t-name">${d.no?d.no+" ":""}${nm(d)}${o.first?`<small>${L().newDish}</small>`:""}</div>
-   <div class="chips">${steps.map(s=>`<span class="chip${s.base?" base":""}${s.done?" done":""}">${show||s.done?s.name:"？"}</span>`).join("")}</div>
-   <div class="t-row"><div class="t-bar" id="tbar"><i></i></div><button class="hintbtn" id="hint" ${show?"disabled":""}>${L().hint}</button></div>`;
-  $("#hint").onclick=()=>{if(o.hint||o.first)return;o.hint=true;G.score=Math.max(0,G.score-30);G.combo=0;renderTicket();renderHUD()};
-  updateOrderBar();
-}
-function renderStage(){
-  const o=G.order;const st={base:o.phase!=="base"&&o.phase!=="cooking",added:o.added};
-  let extra="";if(o.phase==="cooking")extra=`<div class="cooking"><div><span class="ring"></span>${L().cooking[o.d.base]}</div></div>`;
-  $("#stage").innerHTML=drawDish(o.d,st)+extra+`<div class="toast" id="toast"></div>`;
-}
-function renderTray(){
-  const o=G.order,d=o.d,tray=$("#tray"),stepEl=$("#step"),note=$("#stepnote"),sv=$("#serve");
-  let tiles=[];
-  if(o.phase==="base"||o.phase==="cooking"){
-    const opts=d.cat==="noodle"?NOODLE_BASES:STATION_BASES;
-    stepEl.innerHTML=`1<b>|</b>${d.cat==="noodle"?L().step1n:L().step1o}`;note.textContent="";
-    tiles=opts.map(b=>`<button class="tile" data-b="${b}" ${o.phase==="cooking"?"disabled":""}>${baseIcon(b)}<span>${nm(BASES[b])}</span></button>`);
-  }else{
-    stepEl.innerHTML=o.phase==="ready"?`✓<b>|</b>${L().stepReady}`:`2<b>|</b>${L().step2}`;note.textContent=d.ordered&&o.phase!=="ready"?L().step2d:"";
-    tiles=d.items.length?o.tiles.map(i=>`<button class="tile${o.added.includes(i)?" used":""}" data-i="${i}" ${o.phase==="ready"?"disabled":""}>${icon(i)}<span>${itemName(i)}</span></button>`):[];
-  }
-  tray.innerHTML=tiles.join("");
-  tray.querySelectorAll(".tile").forEach(b=>b.onclick=()=>b.dataset.b?pickBase(b):pickItem(b));
-  sv.classList.toggle("ready",o.phase==="ready");sv.disabled=o.phase!=="ready";
-}
-function mistake(el,msg){
-  G.mistakes++;G.order.mist++;G.combo=0;G.score=Math.max(0,G.score-10);sfx.buzz();
-  if(el){el.classList.remove("shake");void el.offsetWidth;el.classList.add("shake")}
-  toast(msg,false);renderHUD();
-}
-function toast(msg,ok){const t=$("#toast");if(!t)return;t.textContent=msg;t.className="toast show"+(ok?" ok":"");clearTimeout(toastTimer);toastTimer=setTimeout(()=>{const n=$("#toast");if(n)n.className="toast"},1100)}
-function pickBase(el){
-  const o=G.order,b=el.dataset.b;G.taps++;
-  if(b!==o.d.base)return mistake(el,L().msg.wrongBase);
-  sfx.tap();
-  const wait=BASES[b].wait;
-  if(wait){o.phase="cooking";renderStage();renderTray();renderTicket();const ref=o;setTimeout(()=>{if(G&&G.order===ref){afterBase();}},wait*1000)}
-  else afterBase();
-}
-function afterBase(){const o=G.order;o.phase=o.d.items.length?"items":"ready";if(o.phase==="ready")sfx.tap();renderStage();renderTray();renderTicket()}
-function pickItem(el){
-  const o=G.order,d=o.d,i=el.dataset.i;if(o.added.includes(i))return;G.taps++;
-  if(!d.items.includes(i))return mistake(el,i==="egg"?L().msg.noEgg:L().msg.wrong);
-  if(d.ordered&&d.items[o.added.length]!==i)return mistake(el,L().msg.order);
-  sfx.tap();o.added.push(i);
-  if(o.added.length===d.items.length)o.phase="ready";
-  renderStage();renderTray();renderTicket();
-}
-function serve(){
-  const o=G.order;if(!o||o.phase!=="ready")return;
-  const perfect=o.mist===0&&!o.hint;
-  if(perfect)G.combo++;
-  const pts=100+Math.round(o.tl*8)+(perfect?20*Math.min(G.combo,5):0);
-  G.score+=pts;G.served++;G.revenue+=o.d.price;G.best=Math.max(G.best,G.combo);
-  sfx.ding();
-  const f=document.createElement("div");f.className="float";f.textContent="+"+pts;$("#stage").appendChild(f);
-  toast(perfect?L().msg.perfect:L().msg.ok,true);
-  renderHUD();G.order=null;
-  setTimeout(()=>{if(G&&G.t>0)newOrder()},450);
-}
-function renderHUD(){
-  $("#hs").textContent=G.score.toLocaleString();$("#hr").textContent="$"+G.revenue.toLocaleString();
-  $("#hcombo").textContent=G.combo>=2?L().combo+G.combo:"";
-}
-function updateOrderBar(){const o=G&&G.order,b=$("#tbar");if(!o||!b)return;const p=Math.max(0,o.tl/o.tmax);b.firstElementChild.style.width=(p*100)+"%";b.classList.toggle("warn",p<.3)}
-function loop(now){
-  const dt=Math.min(.1,(now-last)/1000);last=now;
-  if(!G)return;
-  G.t-=dt;
-  const sec=Math.max(0,Math.ceil(G.t));$("#ht").textContent=sec;$("#hc").classList.toggle("low",G.t<=10);$("#htb").style.width=Math.max(0,G.t/GAME_LEN*100)+"%";
-  if(G.order){G.order.tl-=dt;updateOrderBar();
-    if(G.order.tl<=0){G.missed++;G.combo=0;sfx.buzz();toast(L().msg.late,false);renderHUD();G.order=null;setTimeout(()=>{if(G&&G.t>0)newOrder()},700)}}
-  if(G.t<=0)return endGame();
-  raf=requestAnimationFrame(loop);
-}
-function endGame(){
-  cancelAnimationFrame(raf);sfx.end();
-  const s=G.score,rank=s>=1800?3:s>=1000?2:s>=400?1:0;
-  const prev=+store.get("jjs-best")||0,isBest=s>prev&&s>0;if(isBest)store.set("jjs-best",String(s));
-  const acc=G.taps?Math.round((G.taps-G.mistakes)/G.taps*100):0;
-  const star=on=>`<svg viewBox="0 0 24 24"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6L2.5 9.4l6.6-.8z" fill="${on?"#c39638":"none"}" stroke="${on?"#c39638":"#bcc6d5"}" stroke-width="1.5" stroke-linejoin="round"/></svg>`;
-  app.innerHTML=`<div class="screen result">
-   <div class="brandline"><b>|</b>${L().brand}<b>|</b></div>
-   <div class="stars">${[1,2,3].map(i=>star(rank>=i)).join("")}</div>
-   <p class="rank">${L().ranks[rank]}</p>
-   <div class="bigscore">${s.toLocaleString()}</div>
-   ${isBest?`<div class="newbest">${L().newBest}</div>`:""}
-   <div class="stats"><div><b>${G.served}</b><span>${L().served}</span></div><div><b>${G.missed}</b><span>${L().missed}</span></div><div><b>${acc}%</b><span>${L().acc}</span></div></div>
-   <p class="receipt">${L().receipt(G.served,G.revenue)}</p>
-   <button class="primary" id="again">${L().again}</button>
-   <button class="seg" id="home" style="margin:0 auto;padding:6px 18px;color:var(--brand);font-size:13px">${L().home}</button>
-  </div>`;
-  G=null;
-  $("#again").onclick=startGame;$("#home").onclick=startScreen;
-}
-startScreen();
-})();
+window.claude?.hot?.snapshot?.(()=>({S}));
+window.claude?.hot?.ready?window.claude.hot.ready(boot):boot(window.claude?.hot?.data??{});
 </script>
+
+</body></html>
