@@ -161,7 +161,7 @@ button:focus-visible,.tile:focus-visible,input:focus-visible{outline:3px solid v
 
 <script>
 /* ===== Menu data (game price = menu price) ===== */
-const BUY_MULT=6, GO_BONUS=500, START_MONEY=5000, JAIL_FEE=250, LV_MULT=[1,3,6,10];
+const BUY_MULT=1, GO_BONUS=200, START_MONEY=1500, JAIL_FEE=50, LV_MULT=[1,3,6,10];
 const GROUPS=[
   {c:'#9ad66f',zh:'小菜',en:'Sides'},
   {c:'#3aa76d',zh:'小菜',en:'Sides'},
@@ -208,8 +208,8 @@ const N_T=TILES.length, CORNERS=[0,7,14,21], JAIL=7;
 const COLORS=['#ef5b4c','#ffd23f','#3ec9a7','#e7a1d0'];
 
 const CHANCE=[
-  {zh:'客人大讚好吃，留下小費 $250',en:'A guest loved the noodles and left a $250 tip',fn:p=>{p.money+=250}},
-  {zh:'被美食帳號推薦，生意大好 +$500',en:'A food account recommended you. Collect $500',fn:p=>{p.money+=500}},
+  {zh:'客人大讚好吃，留下小費 $50',en:'A guest loved the noodles and left a $50 tip',fn:p=>{p.money+=50}},
+  {zh:'被美食帳號推薦，生意大好 +$100',en:'A food account recommended you. Collect $100',fn:p=>{p.money+=100}},
   {zh:'一桌外國客人點了 5 杯氣泡水，收入 $175',en:'A table of visitors orders 5 sparkling waters. Collect $175',fn:p=>{p.money+=175}},
   {zh:`回到開店格，領 $${GO_BONUS}`,en:`Go back to Open Shop and collect $${GO_BONUS}`,mv:0},
   {zh:'今天想吃和牛，前往「炙燒和牛臉頰拌麵」',en:'Craving wagyu. Go to Seared Wagyu Beef Cheek Noodles',mv:27},
@@ -218,14 +218,14 @@ const CHANCE=[
   {zh:'打翻一鍋湯，去洗碗區',en:'You spilled a pot of soup. Go to the Dish Pit',jail:true},
 ];
 const FATE=[
-  {zh:'冷氣壞了，修理費 $400',en:'The AC broke. Pay $400 for repairs',fn:p=>pay(p,400)},
-  {zh:'食材漲價，多付 $250',en:'Ingredient prices went up. Pay $250',fn:p=>pay(p,250)},
-  {zh:'繳店租 $500',en:'Rent is due. Pay $500',fn:p=>pay(p,500)},
-  {zh:'衛生稽查滿分，獎金 $400',en:'Perfect health inspection. Collect $400',fn:p=>{p.money+=400}},
-  {zh:'統一發票中獎 $500',en:'Your receipt won the lottery. Collect $500',fn:p=>{p.money+=500}},
-  {zh:'大家來捧場，每位玩家付你 $100',en:'Everyone comes to eat. Each player pays you $100',fn:p=>others(p).forEach(o=>pay(o,100,p))},
-  {zh:'請大家吃員工餐，付每位玩家 $100',en:'Staff meal on you. Pay each player $100',fn:p=>others(p).forEach(o=>pay(p,100,o))},
-  {zh:'店面整修，每顆人氣星付 $100',en:'Renovations: pay $100 per popularity star',fn:p=>{const n=ownedBy(pidOf(p)).reduce((a,i)=>a+(S.level[i]||0),0);pay(p,100*n)}},
+  {zh:'冷氣壞了，修理費 $100',en:'The AC broke. Pay $100 for repairs',fn:p=>pay(p,100)},
+  {zh:'食材漲價，多付 $50',en:'Ingredient prices went up. Pay $50',fn:p=>pay(p,50)},
+  {zh:'繳店租 $150',en:'Rent is due. Pay $150',fn:p=>pay(p,150)},
+  {zh:'衛生稽查滿分，獎金 $100',en:'Perfect health inspection. Collect $100',fn:p=>{p.money+=100}},
+  {zh:'統一發票中獎 $150',en:'Your receipt won the lottery. Collect $150',fn:p=>{p.money+=150}},
+  {zh:'大家來捧場，每位玩家付你 $30',en:'Everyone comes to eat. Each player pays you $30',fn:p=>others(p).forEach(o=>pay(o,30,p))},
+  {zh:'請大家吃員工餐，付每位玩家 $30',en:'Staff meal on you. Pay each player $30',fn:p=>others(p).forEach(o=>pay(p,30,o))},
+  {zh:'店面整修，每顆人氣星付 $25',en:'Renovations: pay $25 per popularity star',fn:p=>{const n=ownedBy(pidOf(p)).reduce((a,i)=>a+(S.level[i]||0),0);pay(p,25*n)}},
   {zh:'拿到一張「免洗碗券」',en:'You get a Skip-the-Dishes ticket',fn:p=>{p.card++}},
 ];
 
@@ -244,8 +244,8 @@ zh:{
   buyQ:(n,p)=>`要買下「${n}」嗎？ $${p}`,buy:'買下',skip:'不買',again:'雙數！再擲一次',end:'結束回合',result:'看結果',
   cpu:'電腦',human:'真人',washing:'洗碗中',ticket:n=>`券×${n}`,broke:'破產',
   logTitle:'店內廣播',round:(a,b)=>`第 ${a} / ${b} 輪`,roundInf:a=>`第 ${a} 輪 · 不限輪數`,newGame:'新遊戲',langBtn:'English',
-  tip:'格子上是買下價格；別人停下來要付的過路費就是這道菜的菜單價。集滿同色過路費加倍，還能提升人氣。',
-  price:'買下價格',baseRent:'過路費（菜單價）',menu:'菜單',fullSet:'集滿同色',star:l=>`人氣 ${stars(l)}`,boostCost:'每次提升人氣',owner:'老闆',noOwner:'還沒人買',spicy:'🌶 辣',
+  tip:'格子上的價格就是菜單價，買下和過路費都是這個價錢。集滿同色過路費加倍，提升人氣後再加價。',
+  price:'買下價格（菜單價）',baseRent:'基本過路費',menu:'菜單',fullSet:'集滿同色',star:l=>`人氣 ${stars(l)}`,boostCost:'每次提升人氣',owner:'老闆',noOwner:'還沒人買',spicy:'🌶 辣',
   boostBtn:c=>`提升人氣 $${c}`,maxed:'人氣已滿',needSet:'集滿同色才能提升人氣',noMoney:'錢不夠',close:'關閉',done:'完成',
   boostTitle:'提升店面人氣',boostNote:m=>`人氣越高，租金越高。現金 $${m}`,plain:'普通',rentNow:r=>`租 $${r}`,
   desc:{go:`每經過一次領 $${GO_BONUS}`,jail:`被派來洗碗時，要擲出雙數、付 $${JAIL_FEE} 或用免洗碗券才能離開。路過沒事。`,free:'吃一份主廚甜品，休息一下。',gojail:'直接去洗碗區，不經過開店格。',chance:'抽一張「今日特餐」卡，多半是好事。',fate:'抽一張「店務」卡，有好有壞。'},
@@ -257,10 +257,10 @@ zh:{
   rules:[
     ['目標',`買下菜單上的菜當作你的店面，向停下來的玩家收過路費。輪數用完時，總資產（現金＋店面＋人氣）最多的人獲勝。如果其他人都破產，剩下的人直接獲勝。每人開始有 $${START_MONEY}。`],
     ['輪到你的時候',`擲兩顆骰子，照點數沿著地圖往前走，再依停下的格子行動。每經過或停在「開店」格，領 $${GO_BONUS}。做完要做的事，按「結束回合」換下一位。`],
-    ['買下店面',`停在還沒人買的菜，可以用格子上的價格買下（菜單價的 ${BUY_MULT} 倍），也可以不買。不買的話格子會留著，下一個停到的人可以買。錢不夠就不能買。點任何格子都能看完整菜名和價格。`],
+    ['買下店面',`停在還沒人買的菜，可以用格子上的價格買下，也就是菜單價，也可以不買。不買的話格子會留著，下一個停到的人可以買。錢不夠就不能買。點任何格子都能看完整菜名和價格。`],
     ['過路費',`停在別人的菜，要付給老闆過路費，金額就是那道菜的菜單價。例如停在別人的「炙燒和牛臉頰拌麵」，付 $380。停在自己的店不用付錢。`],
     ['集滿同色',`同一個顏色的菜全部由你買下，這組菜的過路費變成兩倍。地圖下方的色塊說明列出每組顏色。`],
-    ['提升人氣',`集滿同色之後，在你的回合（擲骰前或走完後）可以按「提升人氣」，不用停在那一格。每道菜最多三顆星，每次花費是買下價格的一半。<br>★ 過路費 3 倍｜★★ 6 倍｜★★★ 10 倍`],
+    ['提升人氣',`集滿同色之後，在你的回合（擲骰前或走完後）可以按「提升人氣」，不用停在那一格。每道菜最多三顆星，每提升一顆星要付一次菜單價。<br>★ 過路費 3 倍｜★★ 6 倍｜★★★ 10 倍`],
     ['今日特餐和店務',`停在「今日特餐 ❓」或「店務 📋」要抽一張卡。今日特餐多半是好事，店務有好有壞。抽到「免洗碗券」可以留著，之後用來離開洗碗區。`],
     ['洗碗區',`停在「去洗碗」、抽到打翻湯的卡，或連續三次擲出雙數，就直接去洗碗區，不經過開店格，也不領錢。<br>之後輪到你時，可以選：付 $${JAIL_FEE} 再照常擲骰、用免洗碗券、或擲骰子拚雙數。擲出雙數就照點數前進。試了三次都沒擲出雙數，要付 $${JAIL_FEE}，再照最後一次的點數前進。<br>在洗碗區時一樣可以收過路費。只是走到洗碗區（路過）沒有影響。`],
     ['擲出雙數',`兩顆骰子點數一樣，走完之後可以再擲一次。連續三次雙數，要直接去洗碗區。`],
@@ -288,8 +288,8 @@ en:{
   buyQ:(n,p)=>`Buy ${n} for $${p}?`,buy:'Buy',skip:'Pass',again:'Doubles! Roll again',end:'End turn',result:'Results',
   cpu:'CPU',human:'Human',washing:'washing dishes',ticket:n=>`ticket×${n}`,broke:'bankrupt',
   logTitle:'SHOP NEWS',round:(a,b)=>`Round ${a} / ${b}`,roundInf:a=>`Round ${a} · no limit`,newGame:'New game',langBtn:'中文',
-  tip:'Tiles show the price to buy. Rent is the dish\'s real menu price. A full color set doubles rent and unlocks popularity boosts.',
-  price:'Price to buy',baseRent:'Rent (menu price)',menu:'menu',fullSet:'Full color set',star:l=>`Popularity ${stars(l)}`,boostCost:'Each boost',owner:'Owner',noOwner:'For sale',spicy:'🌶 Spicy',
+  tip:'Each tile shows the real menu price. That is both the price to buy and the base rent. A full color set doubles rent, and popularity stars raise it further.',
+  price:'Price (menu price)',baseRent:'Base rent',menu:'menu',fullSet:'Full color set',star:l=>`Popularity ${stars(l)}`,boostCost:'Each boost',owner:'Owner',noOwner:'For sale',spicy:'🌶 Spicy',
   boostBtn:c=>`Boost $${c}`,maxed:'Popularity is maxed',needSet:'Own the full color set to boost',noMoney:'Not enough cash',close:'Close',done:'Done',
   boostTitle:'Boost popularity',boostNote:m=>`More stars, higher rent. Cash $${m}`,plain:'No stars',rentNow:r=>`rent $${r}`,
   desc:{go:`Collect $${GO_BONUS} every time you pass.`,jail:`If you're sent here, roll doubles, pay $${JAIL_FEE}, or use a ticket to leave. Just passing is fine.`,free:"Enjoy the Chef's Dessert and take a break.",gojail:'Go straight to the Dish Pit. Do not pass Open Shop.',chance:'Draw a Daily Special card. Usually good news.',fate:'Draw a Shop Duty card. Could go either way.'},
@@ -301,10 +301,10 @@ en:{
   rules:[
     ['Goal',`Buy dishes from the menu as your shops and collect rent from players who land on them. When the rounds run out, the player with the most total assets (cash + shops + stars) wins. If everyone else goes bankrupt, the last player standing wins. Everyone starts with $${START_MONEY}.`],
     ['Your turn',`Roll two dice, move that many spaces around the board, then act on the space you land on. Collect $${GO_BONUS} each time you pass or land on Open Shop. Tap End turn when you're done.`],
-    ['Buying',`Land on a dish nobody owns and you can buy it for the price on the tile (${BUY_MULT}× its menu price), or pass. If you pass, it stays for sale for the next player. You can't buy it without enough cash. Tap any tile to see the full dish name and prices.`],
+    ['Buying',`Land on a dish nobody owns and you can buy it for the price on the tile, which is its menu price, or pass. If you pass, it stays for sale for the next player. You can't buy it without enough cash. Tap any tile to see the full dish name and prices.`],
     ['Rent',`Land on someone else's dish and you pay the owner rent equal to that dish's menu price. For example, landing on someone's Seared Wagyu Beef Cheek Noodles costs $380. Your own shops are free.`],
     ['Color sets',`Own every dish of one color and rent on that set doubles. The legend below the board lists each color group.`],
-    ['Popularity',`Once you own a full color set, you can tap Boost during your turn (before rolling or after moving). You don't need to be on that tile. Each dish holds up to three stars, and each boost costs half the price to buy.<br>★ rent ×3 | ★★ ×6 | ★★★ ×10`],
+    ['Popularity',`Once you own a full color set, you can tap Boost during your turn (before rolling or after moving). You don't need to be on that tile. Each dish holds up to three stars, and each star costs the dish's menu price.<br>★ rent ×3 | ★★ ×6 | ★★★ ×10`],
     ['Daily Special and Shop Duty',`Land on Daily Special ❓ or Shop Duty 📋 to draw a card. Daily Specials are usually good news; Shop Duty can go either way. A Skip-the-Dishes ticket can be kept and used later to leave the Dish Pit.`],
     ['Dish Pit',`Landing on Go Wash, drawing the spilled-soup card, or rolling doubles three times in a row sends you straight to the Dish Pit. You don't pass Open Shop or collect money.<br>On your next turns, choose to pay $${JAIL_FEE} and roll normally, use a ticket, or roll for doubles. Doubles move you out by that roll. After three failed tries, pay $${JAIL_FEE} and move by your last roll.<br>You still collect rent while in the Dish Pit. Simply walking past it has no effect.`],
     ['Doubles',`If both dice match, take another roll after moving. Three doubles in a row sends you to the Dish Pit.`],
@@ -351,7 +351,7 @@ const ownedBy=pid=>Object.keys(S.owner).map(Number).filter(i=>S.owner[i]===pid);
 const groupTiles=g=>TILES.map((x,i)=>x.t==='p'&&x.g===g?i:-1).filter(i=>i>=0);
 const ownsGroup=(pid,g)=>groupTiles(g).every(i=>S.owner[i]===pid);
 const baseRent=i=>TILES[i].price;
-const upCost=i=>Math.round(TILES[i].cost/2/10)*10;
+const upCost=i=>TILES[i].price;
 function rentOf(i){
   const x=TILES[i],o=S.owner[i],lv=S.level[i]||0,b=baseRent(i);
   if(lv>0)return b*LV_MULT[lv];
@@ -361,8 +361,8 @@ const assets=pid=>{const p=S.players[pid];return p.money+ownedBy(pid).reduce((a,
 const canUpgrade=(pid,i)=>{const x=TILES[i];return x.t==='p'&&S.owner[i]===pid&&ownsGroup(pid,x.g)&&(S.level[i]||0)<3&&S.players[pid].money>=upCost(i)};
 const upgradable=pid=>ownedBy(pid).filter(i=>canUpgrade(pid,i));
 function log(...e){S.log.unshift(e);if(S.log.length>60)S.log.pop()}
-function save(){try{if(S&&S.phase!=='over'&&!S.demo)localStorage.setItem('jiushi-monopoly-v3',JSON.stringify(S));else if(S&&S.phase==='over')localStorage.removeItem('jiushi-monopoly-v3')}catch(e){}}
-function loadSaved(){try{const s=localStorage.getItem('jiushi-monopoly-v3');return s?JSON.parse(s):null}catch(e){return null}}
+function save(){try{if(S&&S.phase!=='over'&&!S.demo)localStorage.setItem('jiushi-monopoly-v4',JSON.stringify(S));else if(S&&S.phase==='over')localStorage.removeItem('jiushi-monopoly-v4')}catch(e){}}
+function loadSaved(){try{const s=localStorage.getItem('jiushi-monopoly-v4');return s?JSON.parse(s):null}catch(e){return null}}
 
 /* ===== Board ===== */
 function cell(i){
@@ -568,10 +568,10 @@ function scheduleCpu(){
 }
 function cpuAct(){
   const p=cur();if(!p.cpu)return;
-  if(S.phase==='roll'){if(p.jail){if(p.card)return jailCard();if(p.money>2000)return jailPay();return jailRoll()}return doRoll()}
-  if(S.phase==='buy')return p.money-TILES[p.pos].cost>=900?buy():skipBuy();
+  if(S.phase==='roll'){if(p.jail){if(p.card)return jailCard();if(p.money>400)return jailPay();return jailRoll()}return doRoll()}
+  if(S.phase==='buy')return p.money-TILES[p.pos].cost>=200?buy():skipBuy();
   if(S.phase==='post'){
-    const up=upgradable(S.turn).sort((a,b)=>TILES[b].price-TILES[a].price).find(i=>p.money-upCost(i)>=1500);
+    const up=upgradable(S.turn).sort((a,b)=>TILES[b].price-TILES[a].price).find(i=>p.money-upCost(i)>=300);
     if(up!==undefined)return upgrade(up);
     return S.again?reroll():endTurn();
   }
